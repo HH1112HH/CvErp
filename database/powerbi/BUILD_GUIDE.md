@@ -1,6 +1,6 @@
 # Power BI — Dựng CvErp Dashboard (3 trang)
 
-> **Cập nhật 24/11:** Đây là hướng dẫn nháp ban đầu (4 quan hệ, calculated dimension, `.pbix`, Forecast). Model thực tế đã chốt: **8 quan hệ**, `DimProduct`/`DimWarehouse` là **bảng M**, trang 3 dùng **trend line**, deliverable là **PBIP + 3 ảnh**. Xem `README.md` gốc và `CV_ERP_VAULT/04_Decisions_Log.md` (D019–D022).
+> **Cập nhật 24/11:** Hướng dẫn này đã được đối chiếu một phần với model thực tế: **8 quan hệ**, `DimProduct`/`DimWarehouse` là **bảng M**, trang 3 dùng **trend line**, deliverable là **PBIP + 3 ảnh** (D019–D022). Nguồn chuẩn để tái tạo: `generate-model.py` + `build-report.py`; nếu có khác biệt, ưu tiên script.
 
 Mục tiêu: tạo `database/powerbi/CvErp_Dashboard.pbix` gồm 3 trang, dùng 6 SQL view.
 
@@ -150,9 +150,9 @@ Thêm trang mới, đặt tên **Kho & NVL**.
 
 ---
 
-## Bước 6 — Trang 3: Chi phí & Dự báo
+## Bước 6 — Trang 3: Chi phí & Xu hướng
 
-Thêm trang mới, đặt tên **Chi phí & Dự báo**.
+Thêm trang mới, đặt tên **Chi phí & Xu hướng**.
 
 | Visual | Trường |
 |---|---|
@@ -163,14 +163,14 @@ Thêm trang mới, đặt tên **Chi phí & Dự báo**.
 | Card | `[Số lệnh vượt định mức]` |
 | Clustered bar | Axis: `vw_MaterialCostVariance[ProductCode]` · Values: `[Chênh lệch chi phí NVL]` · "Chênh lệch chi phí theo sản phẩm" |
 | Line chart | Axis: `vw_ProductionPerformance[DueDate]` · Values: `[Chi phí NVL định mức]`, `[Chi phí NVL thực tế]` · "Chi phí theo kỳ" |
-| Line chart | Axis: `vw_OutputMonthly[PeriodStart]` · Values: `[Tổng sản lượng tốt]` · "Sản lượng & dự báo" |
+| Line chart | Axis: `vw_OutputMonthly[PeriodStart]` · Values: `[Tổng sản lượng tốt]` · "Sản lượng & xu hướng" |
 | Matrix | Rows: `vw_MaterialCostVariance[ProductCode]` · Columns: `vw_MaterialCostVariance[VarianceStatus]` · Values: `[Chênh lệch chi phí NVL]` |
 
-### Bật dự báo (điểm nhấn DS/AI)
-1. Chọn line chart "Sản lượng & dự báo".
-2. **Visualizations → Analytics (kính lúp) → Forecast**.
-3. Units: **3**, Forecast length: 3 tháng, Confidence: 95%, Seasonality: Auto.
-4. Bấm **Add**.
+### Bật trend line (D021)
+1. Chọn line chart "Sản lượng & xu hướng".
+2. **Visualizations → Analytics (kính lúp) → Trend line**.
+3. Bật **On**, chọn nét đứt, màu cam `#D97706`.
+4. Không dùng Forecast: PBIR không serialize được cấu hình forecast (Desktop chỉ lưu `show`, không tính).
 
 ### Tô màu chênh lệch
 - Chọn bar "Chênh lệch chi phí".
@@ -182,22 +182,22 @@ Thêm trang mới, đặt tên **Chi phí & Dự báo**.
 
 ## Bước 7 — Lưu và xuất ảnh
 
-1. **File → Save as** → `D:\CV\CV_ERP\database\powerbi\CvErp_Dashboard.pbix`
+1. **File → Save as** → `D:\CV\CV_ERP\database\powerbi\CvErp_Dashboard\CvErp_Dashboard.pbip`
 2. Chụp 3 trang (Win + Shift + S), lưu vào `database/powerbi/screenshots/`:
    - `01-san-xuat.png`
    - `02-kho-nvl.png`
-   - `03-chi-phi-du-bao.png`
-3. Gửi lại cho mình kiểm tra: mình sẽ đọc cấu trúc `.pbix` để xác nhận đủ bảng, measure, trang.
+   - `03-chi-phi-xu-huong.png`
+3. Gửi lại cho mình kiểm tra: mình sẽ đọc cấu trúc PBIP để xác nhận đủ bảng, measure, trang.
 
 ---
 
 ## Checklist nghiệm thu
 
 - [ ] Đủ 6 bảng view + `DimProduct` + `DimWarehouse` + `_Measures`
-- [ ] 4 quan hệ đã tạo
+- [ ] 8 quan hệ đã tạo (from = nhiều, to = một)
 - [ ] Đủ measures trong `measures.dax`
 - [ ] 3 trang, đúng tên
-- [ ] Có 1 line chart bật Forecast
+- [ ] Có trend line trên trang 3 (không dùng Forecast — D021)
 - [ ] Số liệu khớp view (đối chiếu nhanh bằng SQL)
-- [ ] File `.pbix` lưu đúng thư mục
+- [ ] File `.pbip` lưu đúng thư mục
 - [ ] Có 3 ảnh chụp
