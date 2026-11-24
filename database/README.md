@@ -18,7 +18,15 @@ dotnet ef database update --project src/CvErp.Infrastructure --startup-project s
 ## Tạo bộ view báo cáo
 
 ```powershell
-sqlcmd -S .\SQLEXPRESS -E -C -f 65001 -i database\views\00_create_views.sql
+powershell -ExecutionPolicy Bypass -File database\run-views.ps1
+```
+
+> Script dùng .NET `SqlClient` và đọc file SQL bằng UTF-8 để giữ đúng literal tiếng Việt (`Vượt định mức`, `Tiết kiệm`). Không dùng `sqlcmd -i` mặc định vì dễ làm hỏng các chuỗi này.
+
+Có thể truyền tham số khi cần:
+
+```powershell
+powershell -File database\run-views.ps1 -Server '.\SQLEXPRESS' -Database 'CvErp'
 ```
 
 ## Danh sách view
@@ -50,6 +58,9 @@ SELECT COUNT(*) FROM dbo.vw_OutputMonthly;
 - Database: `CvErp`
 - Authentication: Windows (hoặc SQL Server với tài khoản `sa` trên môi trường dev)
 - Import 6 view ở trên; không cần import bảng gốc.
+
+Dashboard đã dựng sẵn: `database/powerbi/CvErp_Dashboard/CvErp_Dashboard.pbip` (PBIP: TMDL + PBIR).
+Ảnh 3 trang: `database/powerbi/screenshots/01-san-xuat.png`, `02-kho-nvl.png`, `03-chi-phi-xu-huong.png`.
 
 ## Xuất CSV cho Power BI (phương án dự phòng)
 

@@ -1,5 +1,7 @@
 # Power BI — Dựng CvErp Dashboard (3 trang)
 
+> **Cập nhật 24/11:** Đây là hướng dẫn nháp ban đầu (4 quan hệ, calculated dimension, `.pbix`, Forecast). Model thực tế đã chốt: **8 quan hệ**, `DimProduct`/`DimWarehouse` là **bảng M**, trang 3 dùng **trend line**, deliverable là **PBIP + 3 ảnh**. Xem `README.md` gốc và `CV_ERP_VAULT/04_Decisions_Log.md` (D019–D022).
+
 Mục tiêu: tạo `database/powerbi/CvErp_Dashboard.pbix` gồm 3 trang, dùng 6 SQL view.
 
 Thời gian ước tính: 60–90 phút.
