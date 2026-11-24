@@ -1,0 +1,108 @@
+// ============================================================
+// CvErp — DAX measures cho Power BI
+// Cách dùng: Modeling > New measure > dán từng measure bên dưới.
+// Bảng đặt measure: tạo một bảng rỗng tên "_Measures" (Enter Data, 1 cột, 0 dòng)
+// rồi đặt tất cả measure vào bảng này cho gọn.
+// ============================================================
+
+// ---------- SẢN XUẤT ----------
+Tổng sản lượng tốt =
+SUM ( vw_OutputMonthly[GoodQuantity] )
+
+Tổng sản lượng lỗi =
+SUM ( vw_OutputMonthly[DefectQuantity] )
+
+Tỷ lệ lỗi % =
+DIVIDE (
+    [Tổng sản lượng lỗi],
+    [Tổng sản lượng tốt] + [Tổng sản lượng lỗi]
+)
+
+Sản lượng kế hoạch =
+SUM ( vw_ProductionPerformance[PlannedQuantity] )
+
+Sản lượng thực tế =
+SUM ( vw_ProductionPerformance[ActualQuantity] )
+
+Tỷ lệ hoàn thành lệnh % =
+DIVIDE ( [Sản lượng thực tế], [Sản lượng kế hoạch] )
+
+Số lệnh đang sản xuất =
+CALCULATE (
+    COUNTROWS ( vw_ProductionOrderProgress ),
+    vw_ProductionOrderProgress[StatusCode] = 3
+)
+
+Số lệnh trễ hạn =
+CALCULATE (
+    COUNTROWS ( vw_ProductionOrderProgress ),
+    vw_ProductionOrderProgress[IsOverdue] = 1
+)
+
+Số ngày trễ TB =
+AVERAGEX (
+    FILTER ( vw_ProductionOrderProgress, vw_ProductionOrderProgress[IsOverdue] = 1 ),
+    vw_ProductionOrderProgress[DaysPastDue]
+)
+
+// ---------- KHO ----------
+Giá trị tồn kho =
+SUM ( vw_InventoryOnHand[StockValue] )
+
+Số mặt hàng dưới định mức =
+COUNTROWS (
+    FILTER (
+        VALUES ( vw_InventoryOnHand[ItemCode] ),
+        CALCULATE ( SUM ( vw_InventoryOnHand[OnHandQuantity] ) )
+            < CALCULATE ( MIN ( vw_InventoryOnHand[MinStock] ) )
+    )
+)
+
+Tồn cuối kỳ =
+VAR LastPeriod = MAX ( vw_StockMovement[PeriodStart] )
+RETURN
+    CALCULATE (
+        SUM ( vw_StockMovement[ClosingQuantity] ),
+        vw_StockMovement[PeriodStart] = LastPeriod
+    )
+
+Tồn cuối kỳ theo tháng =
+SUM ( vw_StockMovement[ClosingQuantity] )
+
+// ---------- CHI PHÍ ----------
+Chi phí NVL định mức =
+SUM ( vw_ProductionPerformance[StandardMaterialCost] )
+
+Chi phí NVL thực tế =
+SUM ( vw_ProductionPerformance[ActualMaterialCost] )
+
+Chênh lệch chi phí NVL =
+[Chi phí NVL thực tế] - [Chi phí NVL định mức]
+
+Tỷ lệ chênh lệch chi phí % =
+DIVIDE ( [Chênh lệch chi phí NVL], [Chi phí NVL định mức] )
+
+Số lệnh vượt định mức =
+CALCULATE (
+    COUNTROWS ( vw_MaterialCostVariance ),
+    vw_MaterialCostVariance[VarianceStatus] = "Vượt định mức"
+)
+
+// ---------- BẢNG PHỤ ----------
+DimProduct =
+SUMMARIZE (
+    vw_InventoryOnHand,
+    vw_InventoryOnHand[ItemId],
+    vw_InventoryOnHand[ItemCode],
+    vw_InventoryOnHand[ItemName],
+    vw_InventoryOnHand[Category],
+    vw_InventoryOnHand[Unit]
+)
+
+DimWarehouse =
+SUMMARIZE (
+    vw_InventoryOnHand,
+    vw_InventoryOnHand[WarehouseId],
+    vw_InventoryOnHand[WarehouseCode],
+    vw_InventoryOnHand[WarehouseName]
+)

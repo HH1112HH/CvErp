@@ -1,0 +1,98 @@
+table vw_OutputMonthly
+	lineageTag: a21d8894-1739-5dbe-b2f7-2f995e28b5a9
+
+	column PeriodStart
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 4c7b4821-748b-5128-835a-b6ac2eca02cf
+		summarizeBy: none
+		sourceColumn: PeriodStart
+
+	column PeriodLabel
+		dataType: string
+		lineageTag: 23a720b3-b12c-5c7a-b701-3b7ca950e129
+		summarizeBy: none
+		sourceColumn: PeriodLabel
+
+	column ItemId
+		dataType: int64
+		isHidden
+		lineageTag: 3be456c6-c3ce-5989-a1b9-14bf4143dc09
+		summarizeBy: none
+		sourceColumn: ItemId
+
+	column ProductCode
+		dataType: string
+		lineageTag: 2c477c08-ba04-5547-8f13-35c19a748339
+		summarizeBy: none
+		sourceColumn: ProductCode
+
+	column ProductName
+		dataType: string
+		lineageTag: bc113b7d-92fc-5d6e-8395-0e4fe6a6ba4d
+		summarizeBy: none
+		sourceColumn: ProductName
+
+	column Category
+		dataType: string
+		lineageTag: 3f365996-25d4-5d7b-9d29-e2a5eaff1fb4
+		summarizeBy: none
+		sourceColumn: Category
+
+	column Unit
+		dataType: string
+		lineageTag: 424e0312-963e-58f2-a7a0-594e412299a6
+		summarizeBy: none
+		sourceColumn: Unit
+
+	column GoodQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: 449c86a6-c318-5924-80d2-194f27ebb0d5
+		summarizeBy: sum
+		sourceColumn: GoodQuantity
+
+	column DefectQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: 4b4102a2-2677-55c0-a362-b7be136806ac
+		summarizeBy: sum
+		sourceColumn: DefectQuantity
+
+	column TotalQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: c99661b5-c20f-53ad-bf05-bb59a022e087
+		summarizeBy: sum
+		sourceColumn: TotalQuantity
+
+	column DefectRatePct
+		dataType: double
+		formatString: 0.00
+		lineageTag: 083393c9-f50f-503a-af08-2f11091cff1b
+		summarizeBy: none
+		sourceColumn: DefectRatePct
+
+	column TotalCost
+		dataType: double
+		formatString: #,##0
+		lineageTag: 55e1ec61-c30f-5ae4-b68f-c5bb28e38eeb
+		summarizeBy: none
+		sourceColumn: TotalCost
+
+	column UnitCost
+		dataType: double
+		formatString: #,##0
+		lineageTag: 2aac3037-6b7b-56be-adb2-c4e3bd60ec9a
+		summarizeBy: none
+		sourceColumn: UnitCost
+
+	partition vw_OutputMonthly = m
+		mode: import
+		source =
+				let
+					Source = Sql.Database("localhost\SQLEXPRESS", "CvErp"),
+					Data = Source{[Schema="dbo",Item="vw_OutputMonthly"]}[Data]
+				in
+					Data
+

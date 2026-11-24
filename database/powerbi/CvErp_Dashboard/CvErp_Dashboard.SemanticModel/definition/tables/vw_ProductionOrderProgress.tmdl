@@ -1,0 +1,110 @@
+table vw_ProductionOrderProgress
+	lineageTag: 8c4507ff-626f-561b-a4fa-5322d380f761
+
+	column ProductionOrderId
+		dataType: int64
+		isHidden
+		lineageTag: 92153523-3edf-5bee-b9c3-192080c6d047
+		summarizeBy: none
+		sourceColumn: ProductionOrderId
+
+	column OrderNo
+		dataType: string
+		lineageTag: 1627be52-8920-5ad0-984e-e8aded0b9df7
+		summarizeBy: none
+		sourceColumn: OrderNo
+
+	column StatusCode
+		dataType: int64
+		lineageTag: 2c04ca84-2c2b-5101-88e3-58e1c595d5e1
+		summarizeBy: sum
+		sourceColumn: StatusCode
+
+	column StatusName
+		dataType: string
+		lineageTag: f79a9296-9f57-5b8f-a947-79f0f2f93980
+		summarizeBy: none
+		sourceColumn: StatusName
+
+	column ProductCode
+		dataType: string
+		lineageTag: 9c04aedd-6bb0-5e7d-9f8f-7064d2d9abc5
+		summarizeBy: none
+		sourceColumn: ProductCode
+
+	column ProductName
+		dataType: string
+		lineageTag: a2e70419-b737-51b8-ac4b-83a67ae64fb6
+		summarizeBy: none
+		sourceColumn: ProductName
+
+	column PlannedQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: 319f86ff-af60-5fdd-9ba3-b2f8cde13cb4
+		summarizeBy: sum
+		sourceColumn: PlannedQuantity
+
+	column ActualQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: 135d3259-6f2f-582a-9138-b29640ddb7b0
+		summarizeBy: sum
+		sourceColumn: ActualQuantity
+
+	column ProgressPct
+		dataType: double
+		formatString: 0.00
+		lineageTag: 95016c8e-5e4e-528c-aba6-718a8741e24c
+		summarizeBy: none
+		sourceColumn: ProgressPct
+
+	column StartDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 95a64860-4370-54dc-9189-f2fee8de7a36
+		summarizeBy: none
+		sourceColumn: StartDate
+
+	column DueDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: f1cd4548-00cc-562d-8271-132fd66d1ab4
+		summarizeBy: none
+		sourceColumn: DueDate
+
+	column CompletedAt
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 2fe8b28a-3151-5c7b-836d-17fd396ae2ef
+		summarizeBy: none
+		sourceColumn: CompletedAt
+
+	column Today
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 446ffbc1-359d-57ac-8d41-1e3294a16b70
+		summarizeBy: none
+		sourceColumn: Today
+
+	column DaysPastDue
+		dataType: int64
+		lineageTag: 072486be-e0d7-565e-ab67-5b02fcb61fd0
+		summarizeBy: none
+		sourceColumn: DaysPastDue
+
+	column IsOverdue
+		dataType: int64
+		lineageTag: 5bb3fb00-feb1-5780-9f46-e68900d9fcc0
+		summarizeBy: none
+		sourceColumn: IsOverdue
+
+	partition vw_ProductionOrderProgress = m
+		mode: import
+		source =
+				let
+					Source = Sql.Database("localhost\SQLEXPRESS", "CvErp"),
+					Data = Source{[Schema="dbo",Item="vw_ProductionOrderProgress"]}[Data]
+				in
+					Data
+

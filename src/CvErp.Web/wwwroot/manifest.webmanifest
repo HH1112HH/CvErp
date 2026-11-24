@@ -1,0 +1,56 @@
+{
+  "id": "/",
+  "name": "Vinatex Phú Hưng · ERP Kho & Sản xuất",
+  "short_name": "VPH ERP",
+  "description": "Bản demo ERP quản trị kho, định mức BOM, cấp phát vật tư và sản xuất. Không phải hệ thống chính thức của Vinatex Phú Hưng.",
+  "lang": "vi",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [ "window-controls-overlay", "standalone", "minimal-ui" ],
+  "background_color": "#f2f6f9",
+  "theme_color": "#0f2b46",
+  "orientation": "any",
+  "categories": [ "business", "productivity" ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Bảng tồn kho",
+      "short_name": "Tồn kho",
+      "url": "/Stock",
+      "icons": [ { "src": "/icons/icon-192.png", "sizes": "192x192" } ]
+    },
+    {
+      "name": "Lệnh sản xuất",
+      "short_name": "Sản xuất",
+      "url": "/ProductionOrders",
+      "icons": [ { "src": "/icons/icon-192.png", "sizes": "192x192" } ]
+    },
+    {
+      "name": "Dashboard kho",
+      "short_name": "Dashboard",
+      "url": "/Dashboard/Inventory",
+      "icons": [ { "src": "/icons/icon-192.png", "sizes": "192x192" } ]
+    }
+  ]
+}

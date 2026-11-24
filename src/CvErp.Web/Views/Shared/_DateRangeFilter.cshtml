@@ -1,0 +1,34 @@
+@model DateRangeFilterModel
+@{
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var sixMonths = today.AddMonths(-6);
+    var threeMonths = today.AddMonths(-3);
+    var yearStart = new DateOnly(today.Year, 1, 1);
+}
+<form method="get" asp-action="@Model.Action" asp-controller="@Model.Controller" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-3">
+            <label class="form-label" for="rangeFrom">Từ ngày</label>
+            <input id="rangeFrom" type="date" name="from" class="form-control" value="@Model.From.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="span-3">
+            <label class="form-label" for="rangeTo">Đến ngày</label>
+            <input id="rangeTo" type="date" name="to" class="form-control" value="@Model.To.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="span-6 d-flex align-items-end gap-2 flex-wrap">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-funnel me-1"></i>Áp dụng
+            </button>
+            @if (Model.ShowPresets)
+            {
+                <a class="btn btn-light btn-sm" asp-action="@Model.Action" asp-controller="@Model.Controller"
+                   asp-route-from="@threeMonths.ToString("yyyy-MM-dd")" asp-route-to="@today.ToString("yyyy-MM-dd")">3 tháng</a>
+                <a class="btn btn-light btn-sm" asp-action="@Model.Action" asp-controller="@Model.Controller"
+                   asp-route-from="@sixMonths.ToString("yyyy-MM-dd")" asp-route-to="@today.ToString("yyyy-MM-dd")">6 tháng</a>
+                <a class="btn btn-light btn-sm" asp-action="@Model.Action" asp-controller="@Model.Controller"
+                   asp-route-from="@yearStart.ToString("yyyy-MM-dd")" asp-route-to="@today.ToString("yyyy-MM-dd")">Năm nay</a>
+            }
+            <span class="text-muted-sm ms-auto">@Model.Label: @UiText.Date(Model.From) – @UiText.Date(Model.To)</span>
+        </div>
+    </div>
+</form>

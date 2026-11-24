@@ -1,0 +1,174 @@
+@model InventoryOverview
+@{
+    ViewData["Title"] = "Trung tâm báo cáo";
+    ViewData["Subtitle"] = "Tổng hợp tồn kho, biến động, sản xuất và chênh lệch chi phí.";
+    var from = ViewData["From"] as DateOnly? ?? DateOnly.FromDateTime(DateTime.Today.AddMonths(-6));
+    var to = ViewData["To"] as DateOnly? ?? DateOnly.FromDateTime(DateTime.Today);
+    var canViewVariance = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Manager);
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Trung tâm báo cáo</h2>
+        <p class="page-subtitle">Kỳ dữ liệu @UiText.Date(from) – @UiText.Date(to) · nguồn sổ cái kho và lệnh sản xuất</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-outline-primary" asp-action="Movements"><i class="bi bi-arrow-left-right me-1"></i>Biến động kho</a>
+        <a class="btn btn-outline-primary" asp-action="Production"><i class="bi bi-clipboard-data me-1"></i>Báo cáo sản xuất</a>
+        @if (canViewVariance)
+        {
+            <a class="btn btn-outline-primary" asp-action="Variance"><i class="bi bi-currency-exchange me-1"></i>Chênh lệch chi phí</a>
+        }
+    </div>
+</div>
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-blue"><i class="bi bi-safe2"></i></div>
+        <div>
+            <div class="kpi-label">Giá trị tồn kho</div>
+            <div class="kpi-value">@UiText.Money(Model.TotalStockValue)<small> đ</small></div>
+            <div class="kpi-note">@Model.ItemCount mã vật tư</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-teal"><i class="bi bi-box-seam"></i></div>
+        <div>
+            <div class="kpi-label">Nguyên vật liệu</div>
+            <div class="kpi-value">@Model.RawMaterialCount<small> mã</small></div>
+            <div class="kpi-note">Đang quản lý trong danh mục</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-amber"><i class="bi bi-exclamation-triangle"></i></div>
+        <div>
+            <div class="kpi-label">Dưới tồn tối thiểu</div>
+            <div class="kpi-value">@Model.LowStockCount<small> mã</small></div>
+            <div class="kpi-note"><a class="down" asp-action="LowStock">Xem báo cáo thiếu hụt</a></div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-violet"><i class="bi bi-arrow-down-up"></i></div>
+        <div>
+            <div class="kpi-label">Giá trị nhập trong kỳ</div>
+            <div class="kpi-value">@UiText.Money(Model.StockFlow.Sum(x => x.ReceiptValue))<small> đ</small></div>
+            <div class="kpi-note">Xuất @UiText.Money(Model.StockFlow.Sum(x => x.IssueValue)) đ</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6 col-xl-3">
+        <a class="card h-100 report-tile" asp-action="StockSummary">
+            <div class="card-body">
+                <div class="kpi-icon bg-soft-blue mb-3"><i class="bi bi-boxes"></i></div>
+                <h3 class="h6 fw-bold mb-1">Tổng hợp tồn kho</h3>
+                <p class="text-muted-sm mb-2">Số lượng, đơn giá và giá trị tồn theo vật tư, kho và nhóm.</p>
+                <span class="text-brand small fw-semibold">Mở báo cáo <i class="bi bi-arrow-right"></i></span>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <a class="card h-100 report-tile" asp-action="Movements">
+            <div class="card-body">
+                <div class="kpi-icon bg-soft-teal mb-3"><i class="bi bi-arrow-left-right"></i></div>
+                <h3 class="h6 fw-bold mb-1">Biến động kho</h3>
+                <p class="text-muted-sm mb-2">Lịch sử nhập xuất theo chứng từ, vật tư và kho.</p>
+                <span class="text-brand small fw-semibold">Mở báo cáo <i class="bi bi-arrow-right"></i></span>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <a class="card h-100 report-tile" asp-action="LowStock">
+            <div class="card-body">
+                <div class="kpi-icon bg-soft-amber mb-3"><i class="bi bi-exclamation-triangle"></i></div>
+                <h3 class="h6 fw-bold mb-1">Vật tư dưới định mức</h3>
+                <p class="text-muted-sm mb-2">Danh sách vật tư cần bổ sung và giá trị thiếu hụt ước tính.</p>
+                <span class="text-brand small fw-semibold">Mở báo cáo <i class="bi bi-arrow-right"></i></span>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <a class="card h-100 report-tile" asp-action="Production">
+            <div class="card-body">
+                <div class="kpi-icon bg-soft-violet mb-3"><i class="bi bi-clipboard-data"></i></div>
+                <h3 class="h6 fw-bold mb-1">Sản lượng sản xuất</h3>
+                <p class="text-muted-sm mb-2">Kế hoạch, sản lượng tốt, lỗi và tỷ lệ hoàn thành.</p>
+                <span class="text-brand small fw-semibold">Mở báo cáo <i class="bi bi-arrow-right"></i></span>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-7">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Giao dịch kho gần nhất</span>
+                <a class="text-muted-sm" asp-action="Movements">Xem tất cả</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Chứng từ</th>
+                            <th>Vật tư</th>
+                            <th>Kho</th>
+                            <th class="text-end">Giá trị</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var transaction in Model.RecentTransactions.Take(10))
+                        {
+                            <tr>
+                                <td class="nowrap">@UiText.Date(transaction.Date)</td>
+                                <td class="strong-code">@transaction.ReferenceNo</td>
+                                <td>@transaction.ItemName</td>
+                                <td class="text-muted-sm">@transaction.WarehouseName</td>
+                                <td class="num @(transaction.Amount < 0 ? "stock-zero" : "")">@UiText.Money(transaction.Amount)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Cảnh báo tồn thấp</span>
+                <a class="text-muted-sm" asp-action="LowStock">Chi tiết</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>Vật tư</th>
+                            <th class="text-end">Tồn</th>
+                            <th class="text-end">Tối thiểu</th>
+                            <th class="text-end">Thiếu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.LowStock.Count == 0)
+                        {
+                            <tr><td colspan="4"><div class="empty-state py-4"><i class="bi bi-shield-check"></i><strong>Không có cảnh báo</strong></div></td></tr>
+                        }
+                        @foreach (var row in Model.LowStock.Take(8))
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@row.Name</div>
+                                    <div class="text-muted-sm strong-code">@row.Code</div>
+                                </td>
+                                <td class="num stock-low">@UiText.Qty(row.OnHand)</td>
+                                <td class="num">@UiText.Qty(row.MinStock)</td>
+                                <td class="num"><span class="badge text-bg-warning">@UiText.Qty(row.Shortage)</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,28 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = "Có lỗi xảy ra";
+    Layout = "_AuthLayout";
+}
+<div class="auth-shell" style="grid-template-columns:1fr;max-width:560px;">
+    <section class="auth-main text-center">
+        <div class="mb-3">
+            <div class="kpi-icon bg-soft-red mx-auto" style="width:60px;height:60px;font-size:1.6rem;">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+        </div>
+        <h2>Đã xảy ra lỗi</h2>
+        <p class="auth-sub">
+            Hệ thống không thể xử lý yêu cầu này. Vui lòng thử lại hoặc quay về trang tổng quan.
+        </p>
+        @if (Model.ShowRequestId)
+        {
+            <p class="text-muted-sm">Mã yêu cầu: <code>@Model.RequestId</code></p>
+        }
+        <div class="d-flex gap-2 justify-content-center">
+            <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary">
+                <i class="bi bi-grid-1x2 me-1"></i>Về tổng quan
+            </a>
+            <a href="javascript:history.back()" class="btn btn-light">Quay lại</a>
+        </div>
+    </section>
+</div>

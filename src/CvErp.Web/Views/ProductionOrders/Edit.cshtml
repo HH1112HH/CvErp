@@ -1,0 +1,44 @@
+@model ProductionOrderCreateViewModel
+@{
+    ViewData["Title"] = "Sửa lệnh sản xuất";
+    ViewData["Subtitle"] = $"Cập nhật lệnh {Model.OrderNo}. Nhu cầu vật tư sẽ được tính lại theo BOM hiện tại.";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Sửa lệnh <span class="strong-code">@Model.OrderNo</span></h2>
+        <p class="page-subtitle">Chỉ lệnh nháp mới được chỉnh sửa.</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-light" asp-action="Details" asp-route-id="@Model.Id"><i class="bi bi-arrow-left me-1"></i>Chi tiết</a>
+    </div>
+</div>
+
+@if (Model.ExistingMaterials.Count > 0)
+{
+    <div class="alert alert-info d-flex gap-2 align-items-start">
+        <i class="bi bi-info-circle-fill"></i>
+        <div>
+            <strong>Nhu cầu hiện tại của lệnh:</strong>
+            @string.Join(" · ", Model.ExistingMaterials.Select(x => $"{x.Item?.Code}: {UiText.Qty(x.StandardQuantity)} {x.Item?.Unit}"))
+            <div class="small mt-1">Khi lưu, hệ thống sẽ chụp lại nhu cầu theo BOM và số lượng mới.</div>
+        </div>
+    </div>
+}
+
+<form method="post" asp-action="Edit" asp-route-id="@Model.Id" autocomplete="off" data-line-form>
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="OrderNo" />
+    <div asp-validation-summary="All" class="alert alert-danger py-2 small validation-summary" role="alert"></div>
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-pencil-square"></i>Thông tin lệnh sản xuất</div>
+        <partial name="_Form" model="Model" />
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Lưu thay đổi</button>
+        <a class="btn btn-light" asp-action="Details" asp-route-id="@Model.Id">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

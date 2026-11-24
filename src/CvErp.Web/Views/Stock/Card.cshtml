@@ -1,0 +1,188 @@
+@model StockCardViewModel
+@{
+    ViewData["Title"] = "Thẻ kho";
+    ViewData["Subtitle"] = Model.Item is null ? "Chọn vật tư và kho để xem lịch sử nhập xuất." : $"{Model.Item.Code} · {Model.Warehouse?.Name}";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Thẻ kho chi tiết</h2>
+        <p class="page-subtitle">
+            @if (Model.Item is not null)
+            {
+                <span>@Model.Item.Name · @UiText.Date(Model.From) – @UiText.Date(Model.To)</span>
+            }
+            else
+            {
+                <span>Chưa có dữ liệu vật tư hoặc kho.</span>
+            }
+        </p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-light" asp-action="Index"><i class="bi bi-boxes me-1"></i>Tồn kho</a>
+        @if (Model.Item is not null && Model.Warehouse is not null)
+        {
+            <a class="btn btn-outline-primary"
+               asp-action="ExportCard" asp-route-itemId="@Model.ItemId" asp-route-warehouseId="@Model.WarehouseId"
+               asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")">
+                <i class="bi bi-file-earmark-excel me-1"></i>Xuất CSV
+            </a>
+            <button class="btn btn-outline-primary" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i>In thẻ kho</button>
+        }
+    </div>
+</div>
+
+<form method="get" class="filter-bar no-print">
+    <div class="filter-grid">
+        <div class="span-4">
+            <label class="form-label" for="itemId">Vật tư</label>
+            <select id="itemId" name="itemId" class="form-select">
+                @foreach (var option in Model.ItemOptions)
+                {
+                    <option value="@option.Value" selected="@(option.Value == Model.ItemId.ToString() ? "selected" : null)">@option.Text</option>
+                }
+            </select>
+        </div>
+        <div class="span-3">
+            <label class="form-label" for="warehouseId">Kho</label>
+            <select id="warehouseId" name="warehouseId" class="form-select">
+                @foreach (var option in Model.WarehouseOptions)
+                {
+                    <option value="@option.Value" selected="@(option.Value == Model.WarehouseId.ToString() ? "selected" : null)">@option.Text</option>
+                }
+            </select>
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="from">Từ ngày</label>
+            <input id="from" type="date" name="from" value="@Model.From.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="to">Đến ngày</label>
+            <input id="to" type="date" name="to" value="@Model.To.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="span-1 d-flex align-items-end">
+            <button class="btn btn-primary w-100" type="submit" title="Xem"><i class="bi bi-search"></i></button>
+        </div>
+    </div>
+</form>
+
+@if (Model.Item is null || Model.Warehouse is null)
+{
+    <div class="card">
+        <div class="empty-state">
+            <i class="bi bi-card-list"></i>
+            <strong>Chưa có dữ liệu</strong>
+            <p>Hãy thêm vật tư và kho trước khi xem thẻ kho.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-soft-slate"><i class="bi bi-box-arrow-in-right"></i></div>
+            <div>
+                <div class="kpi-label">Tồn đầu kỳ</div>
+                <div class="kpi-value">@UiText.Qty(Model.OpeningQuantity)<small> @Model.Item.Unit</small></div>
+                <div class="kpi-note">Giá trị @UiText.Money(Model.OpeningValue) đ</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon bg-soft-teal"><i class="bi bi-arrow-down-up"></i></div>
+            <div>
+                <div class="kpi-label">Nhập trong kỳ</div>
+                <div class="kpi-value">@UiText.Qty(Model.Rows.Where(x => x.Quantity > 0).Sum(x => x.Quantity))<small> @Model.Item.Unit</small></div>
+                <div class="kpi-note">@Model.Rows.Count(x => x.Quantity > 0) giao dịch nhập</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon bg-soft-amber"><i class="bi bi-box-arrow-up"></i></div>
+            <div>
+                <div class="kpi-label">Xuất trong kỳ</div>
+                <div class="kpi-value">@UiText.Qty(Math.Abs(Model.Rows.Where(x => x.Quantity < 0).Sum(x => x.Quantity)))<small> @Model.Item.Unit</small></div>
+                <div class="kpi-note">@Model.Rows.Count(x => x.Quantity < 0) giao dịch xuất</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon @(Model.ClosingQuantity <= 0 ? "bg-soft-red" : "bg-soft-blue")"><i class="bi bi-safe2"></i></div>
+            <div>
+                <div class="kpi-label">Tồn cuối kỳ</div>
+                <div class="kpi-value">@UiText.Qty(Model.ClosingQuantity)<small> @Model.Item.Unit</small></div>
+                <div class="kpi-note">Giá trị @UiText.Money(Model.ClosingValue) đ</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>@Model.Item.Code · @Model.Item.Name</span>
+            <span class="text-muted-sm">@Model.Warehouse.Code · @Model.Warehouse.Name</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table-erp">
+                <thead>
+                    <tr>
+                        <th>Ngày</th>
+                        <th>Số chứng từ</th>
+                        <th>Loại giao dịch</th>
+                        <th>Diễn giải</th>
+                        <th class="text-end">Nhập</th>
+                        <th class="text-end">Xuất</th>
+                        <th class="text-end">Đơn giá</th>
+                        <th class="text-end">Giá trị</th>
+                        <th class="text-end">Tồn lũy kế</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="bg-soft">
+                        <td>@UiText.Date(Model.From)</td>
+                        <td colspan="3" class="fw-semibold">Số dư đầu kỳ</td>
+                        <td class="num"></td>
+                        <td class="num"></td>
+                        <td class="num"></td>
+                        <td class="num">@UiText.Money(Model.OpeningValue)</td>
+                        <td class="num fw-semibold">@UiText.Qty(Model.OpeningQuantity)</td>
+                    </tr>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9">
+                                <div class="empty-state py-4">
+                                    <i class="bi bi-inbox"></i>
+                                    <strong>Không có giao dịch trong kỳ</strong>
+                                    <p>Thử mở rộng khoảng thời gian.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td class="nowrap">@UiText.Date(row.Date)</td>
+                            <td class="strong-code">@row.ReferenceNo</td>
+                            <td>@UiText.TxTypeLabel(row.Type)</td>
+                            <td class="text-muted-sm">@row.Note</td>
+                            <td class="num stock-positive">@(row.Quantity > 0 ? UiText.Qty(row.Quantity) : "")</td>
+                            <td class="num stock-zero">@(row.Quantity < 0 ? UiText.Qty(Math.Abs(row.Quantity)) : "")</td>
+                            <td class="num">@UiText.Money(row.UnitCost)</td>
+                            <td class="num">@UiText.Money(row.Amount)</td>
+                            <td class="num fw-semibold">@UiText.Qty(row.RunningQuantity)</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end fw-semibold">Tổng cộng / Tồn cuối kỳ</td>
+                        <td class="num stock-positive fw-semibold">@UiText.Qty(Model.Rows.Where(x => x.Quantity > 0).Sum(x => x.Quantity))</td>
+                        <td class="num stock-zero fw-semibold">@UiText.Qty(Math.Abs(Model.Rows.Where(x => x.Quantity < 0).Sum(x => x.Quantity)))</td>
+                        <td></td>
+                        <td class="num fw-semibold">@UiText.Money(Model.ClosingValue)</td>
+                        <td class="num fw-bold text-brand">@UiText.Qty(Model.ClosingQuantity)</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <div class="text-muted-sm mt-2">
+        <i class="bi bi-info-circle me-1"></i>Thẻ kho chỉ hiển thị giao dịch đã ghi sổ. Số dư được tính lũy kế từ sổ cái.
+    </div>
+}

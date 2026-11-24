@@ -1,0 +1,156 @@
+@model MaterialIssueEditViewModel
+@{
+    var lineIndex = 0;
+}
+<div class="row g-3">
+    <div class="col-md-5">
+        <label asp-for="ProductionOrderId" class="form-label required"></label>
+        <select asp-for="ProductionOrderId" class="form-select">
+            <option value="0">— Chọn lệnh sản xuất —</option>
+            @foreach (var option in Model.OrderOptions)
+            {
+                <option value="@option.Value" selected="@(option.Value == Model.ProductionOrderId.ToString() ? "selected" : null)">@option.Text</option>
+            }
+        </select>
+        <span asp-validation-for="ProductionOrderId" class="text-danger small"></span>
+        <div class="form-text">Chỉ lệnh đã duyệt hoặc đang sản xuất mới được cấp phát.</div>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="WarehouseId" class="form-label required"></label>
+        <select asp-for="WarehouseId" class="form-select" data-warehouse-select>
+            <option value="0">— Chọn kho xuất —</option>
+            @foreach (var option in Model.WarehouseOptions)
+            {
+                <option value="@option.Value" selected="@(option.Value == Model.WarehouseId.ToString() ? "selected" : null)">@option.Text</option>
+            }
+        </select>
+        <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="IssueDate" class="form-label required"></label>
+        <input asp-for="IssueDate" type="date" class="form-control" />
+        <span asp-validation-for="IssueDate" class="text-danger small"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Note" class="form-label"></label>
+        <input asp-for="Note" class="form-control" placeholder="Ghi chú phiếu cấp phát" />
+        <span asp-validation-for="Note" class="text-danger small"></span>
+    </div>
+</div>
+
+@if (Model.ReturnOrderId is not null)
+{
+    <div class="alert alert-info d-flex gap-2 align-items-start mt-3">
+        <i class="bi bi-magic"></i>
+        <div>
+            <strong>Đã điền sẵn theo nhu cầu còn lại của lệnh.</strong>
+            Bạn có thể giảm số lượng hoặc bỏ dòng không cần cấp. Hệ thống chặn vật tư ngoài định mức của lệnh.
+        </div>
+    </div>
+}
+
+<div class="form-section mt-1" data-line-editor data-calc="stock" data-availability="true"
+     data-item-info-url="@Url.Action("ItemInfo", "Stock")" data-availability-url="@Url.Action("Availability", "Stock")">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <div class="form-section-title mb-0"><i class="bi bi-list-ol"></i>Vật tư cấp phát</div>
+        <button type="button" class="btn btn-outline-primary btn-sm" data-line-add>
+            <i class="bi bi-plus-lg me-1"></i>Thêm dòng
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table-erp line-items-table">
+            <thead>
+                <tr>
+                    <th style="width:38px;">#</th>
+                    <th style="min-width:270px;">Vật tư</th>
+                    <th class="text-end" style="width:120px;">Số lượng</th>
+                    <th class="text-end" style="width:130px;">Tồn khả dụng</th>
+                    <th class="text-end" style="width:130px;">Đơn giá</th>
+                    <th class="text-end" style="width:140px;">Thành tiền</th>
+                    <th style="min-width:150px;">Ghi chú</th>
+                    <th style="width:44px;"></th>
+                </tr>
+            </thead>
+            <tbody data-lines>
+                @foreach (var line in Model.Lines)
+                {
+                    var selectedId = line.ItemId.ToString();
+                    <tr data-line>
+                        <td class="line-index text-muted-sm">@(lineIndex + 1)</td>
+                        <td>
+                            <select name="Lines[@lineIndex].ItemId" class="form-select" data-item-select>
+                                <option value="0">— Chọn vật tư —</option>
+                                @foreach (var option in Model.ItemOptions)
+                                {
+                                    <option value="@option.Value" selected="@(option.Value == selectedId ? "selected" : null)">@option.Text</option>
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <input name="Lines[@lineIndex].Quantity" value="@line.Quantity.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                   type="number" step="0.0001" min="0.0001" class="form-control text-end" data-qty />
+                        </td>
+                        <td class="num"><span class="qty-chip" data-availability>—</span></td>
+                        <td>
+                            <input name="Lines[@lineIndex].UnitCost" value="@line.UnitCost.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                   type="number" step="0.01" min="0" class="form-control text-end" data-unit-cost-input />
+                        </td>
+                        <td class="num fw-semibold" data-amount>—</td>
+                        <td>
+                            <input name="Lines[@lineIndex].Note" value="@line.Note" class="form-control" placeholder="Ghi chú" />
+                        </td>
+                        <td class="text-end">
+                            <button type="button" class="icon-link text-danger" data-line-remove title="Xóa dòng">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    lineIndex++;
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="5" class="text-end">Tổng giá trị cấp phát</td>
+                    <td class="num text-brand" data-line-total>0 đ</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <div class="form-text mt-2">
+        <i class="bi bi-info-circle me-1"></i>Tồn khả dụng theo kho xuất. Ghi sổ sẽ bị chặn nếu số lượng vượt tồn.
+    </div>
+
+    <template data-line-template>
+        <tr data-line>
+            <td class="line-index text-muted-sm"></td>
+            <td>
+                <select name="Lines[__index__].ItemId" class="form-select" data-item-select>
+                    <option value="0">— Chọn vật tư —</option>
+                    @foreach (var option in Model.ItemOptions)
+                    {
+                        <option value="@option.Value">@option.Text</option>
+                    }
+                </select>
+            </td>
+            <td>
+                <input name="Lines[__index__].Quantity" value="1" type="number" step="0.0001" min="0.0001"
+                       class="form-control text-end" data-qty />
+            </td>
+            <td class="num"><span class="qty-chip" data-availability>—</span></td>
+            <td>
+                <input name="Lines[__index__].UnitCost" value="0" type="number" step="0.01" min="0"
+                       class="form-control text-end" data-unit-cost-input />
+            </td>
+            <td class="num fw-semibold" data-amount>—</td>
+            <td>
+                <input name="Lines[__index__].Note" class="form-control" placeholder="Ghi chú" />
+            </td>
+            <td class="text-end">
+                <button type="button" class="icon-link text-danger" data-line-remove title="Xóa dòng">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    </template>
+</div>

@@ -1,0 +1,52 @@
+@model CvErp.Web.ViewModels.Common.IPagedResult
+@{
+    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var routeValues = new Dictionary<string, string?>();
+    foreach (var item in Context.Request.Query)
+    {
+        if (!string.Equals(item.Key, "page", StringComparison.OrdinalIgnoreCase))
+        {
+            routeValues[item.Key] = item.Value.ToString();
+        }
+    }
+
+    string PageUrl(int page)
+    {
+        routeValues["page"] = page.ToString();
+        return Url.Action(action, controller, routeValues) ?? "#";
+    }
+
+    var start = Math.Max(1, Model.Page - 2);
+    var end = Math.Min(Model.TotalPages, start + 4);
+    start = Math.Max(1, end - 4);
+}
+@if (Model.TotalCount > 0)
+{
+    <div class="pagination-erp">
+        <div>
+            Hiển thị <strong>@(((Model.Page - 1) * Model.PageSize) + 1)–@(Math.Min(Model.Page * Model.PageSize, Model.TotalCount))</strong>
+            trong <strong>@Model.TotalCount</strong> bản ghi
+        </div>
+        <nav aria-label="Phân trang">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(Model.HasPrevious ? "" : "disabled")">
+                    <a class="page-link" href="@PageUrl(Model.Page - 1)" aria-label="Trang trước">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                @for (var i = start; i <= end; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" href="@PageUrl(i)">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.HasNext ? "" : "disabled")">
+                    <a class="page-link" href="@PageUrl(Model.Page + 1)" aria-label="Trang sau">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+}

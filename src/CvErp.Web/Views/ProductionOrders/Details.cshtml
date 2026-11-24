@@ -1,0 +1,396 @@
+@model ProductionOrderDetailsViewModel
+@{
+    var order = Model.Order;
+    ViewData["Title"] = $"Lệnh sản xuất {order.OrderNo}";
+    ViewData["Subtitle"] = $"{order.FinishedGoodItem?.Name} · {UiText.Qty(order.PlannedQuantity)} {order.FinishedGoodItem?.Unit}";
+    var isAdmin = User.IsInRole(AppRoles.Administrator);
+    var isManager = User.IsInRole(AppRoles.Manager);
+    var isProduction = User.IsInRole(AppRoles.Production);
+    var canManage = isAdmin || isProduction;
+    var canApprove = isAdmin || isManager;
+    var canEdit = order.Status == ProductionOrderStatus.Draft && canManage;
+    var canSubmit = order.Status == ProductionOrderStatus.Draft && canManage;
+    var canApproveNow = order.Status == ProductionOrderStatus.Submitted && canApprove;
+    var canIssue = order.Status is ProductionOrderStatus.Approved or ProductionOrderStatus.InProgress && canManage;
+    var canComplete = order.Status is ProductionOrderStatus.Approved or ProductionOrderStatus.InProgress && canManage;
+    var canCancel = order.Status is ProductionOrderStatus.Draft or ProductionOrderStatus.Submitted or ProductionOrderStatus.Approved && (canManage || isManager);
+    var steps = new[] { "Nháp", "Chờ duyệt", "Đã duyệt", "Đang sản xuất", "Hoàn thành" };
+    var currentStep = order.Status switch
+    {
+        ProductionOrderStatus.Draft => 0,
+        ProductionOrderStatus.Submitted => 1,
+        ProductionOrderStatus.Approved => 2,
+        ProductionOrderStatus.InProgress => 3,
+        ProductionOrderStatus.Completed => 4,
+        _ => -1
+    };
+    var variance = Model.ActualCost - Model.StandardCost;
+    var variancePercent = Model.StandardCost != 0 ? variance / Model.StandardCost * 100 : 0;
+    string UserName(string? id) => id is not null && Model.UserNames.TryGetValue(id, out var name) ? name : "—";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Lệnh <span class="strong-code">@order.OrderNo</span></h2>
+        <p class="page-subtitle">@order.FinishedGoodItem?.Code · @order.FinishedGoodItem?.Name · BOM @order.Bom?.Code</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-light" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Danh sách</a>
+        @if (canEdit)
+        {
+            <a class="btn btn-outline-primary" asp-action="Edit" asp-route-id="@order.Id"><i class="bi bi-pencil me-1"></i>Sửa</a>
+        }
+        <button class="btn btn-outline-primary" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i>In lệnh</button>
+    </div>
+</div>
+
+<div class="doc-hero">
+    <div>
+        <div class="doc-number">
+            @order.OrderNo
+            <span class="badge @UiText.ProductionStatusCss(order.Status) align-middle ms-1">@UiText.ProductionStatusLabel(order.Status)</span>
+        </div>
+        <div class="doc-meta">
+            @order.FinishedGoodItem?.Name · kế hoạch @UiText.Qty(order.PlannedQuantity) @order.FinishedGoodItem?.Unit
+            · @UiText.Date(order.StartDate) → @UiText.Date(order.DueDate)
+        </div>
+        <div class="mt-2 d-flex flex-wrap gap-2">
+            <span class="badge text-bg-light"><i class="bi bi-buildings me-1"></i>Nhập thành phẩm: @order.OutputWarehouse?.Name</span>
+            <span class="badge text-bg-light"><i class="bi bi-diagram-3 me-1"></i>@order.Materials.Count nguyên vật liệu</span>
+            @if (order.CompletedAt is not null)
+            {
+                <span class="badge text-bg-light"><i class="bi bi-check2-circle me-1"></i>Hoàn thành @UiText.DateTimeLocal(order.CompletedAt)</span>
+            }
+        </div>
+    </div>
+    <div class="text-end">
+        <div class="text-muted-sm">Chi phí vật tư thực tế / định mức</div>
+        <div class="doc-amount">@UiText.Money(Model.ActualCost) <small class="fs-6 text-muted">/ @UiText.Money(Model.StandardCost) đ</small></div>
+        <div class="text-muted-sm @(variance > 0 ? "stock-zero" : "stock-positive")">
+            Chênh lệch @(variance > 0 ? "+" : "")@UiText.Money(variance) đ (@UiText.Percent(variancePercent))
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        @if (order.Status == ProductionOrderStatus.Cancelled)
+        {
+            <div class="alert alert-danger d-flex gap-2 align-items-start mb-0">
+                <i class="bi bi-x-octagon-fill"></i>
+                <div>
+                    <strong>Lệnh đã bị hủy.</strong>
+                    @if (!string.IsNullOrWhiteSpace(order.CancelReason))
+                    {
+                        <span>Lý do: @order.CancelReason</span>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="workflow">
+                @for (var i = 0; i < steps.Length; i++)
+                {
+                    var done = order.Status == ProductionOrderStatus.Completed ? i <= currentStep : i < currentStep;
+                    var isCurrent = i == currentStep && order.Status != ProductionOrderStatus.Completed;
+                    var css = done ? "done" : isCurrent ? "current" : "";
+                    <div class="workflow-step @css">
+                        <div class="workflow-dot">
+                            @if (done)
+                            {
+                                <i class="bi bi-check-lg"></i>
+                            }
+                            else
+                            {
+                                <span>@(i + 1)</span>
+                            }
+                        </div>
+                        <div class="workflow-text">
+                            <strong>@steps[i]</strong>
+                            <small>@(done ? "Hoàn tất" : isCurrent ? "Đang xử lý" : "Chưa thực hiện")</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Nhu cầu &amp; thực tế cấp phát vật tư</span>
+                <span class="text-muted-sm">Chỉ tính phiếu đã ghi sổ</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>Mã NVL</th>
+                            <th>Tên nguyên vật liệu</th>
+                            <th>ĐVT</th>
+                            <th class="text-end">Định mức</th>
+                            <th class="text-end">Đã cấp</th>
+                            <th class="text-end">Chênh lệch</th>
+                            <th class="text-end">Giá trị định mức</th>
+                            <th class="text-end">Giá trị thực tế</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Requirements.Count == 0)
+                        {
+                            <tr><td colspan="8"><div class="empty-state py-4"><i class="bi bi-diagram-3"></i><strong>Chưa có nhu cầu vật tư</strong></div></td></tr>
+                        }
+                        @foreach (var row in Model.Requirements)
+                        {
+                            <tr>
+                                <td class="strong-code">@row.Code</td>
+                                <td class="fw-semibold">@row.Name</td>
+                                <td>@row.Unit</td>
+                                <td class="num">@UiText.Qty(row.StandardQuantity)</td>
+                                <td class="num">@UiText.Qty(row.IssuedQuantity)</td>
+                                <td class="num @(row.IsOverrun ? "stock-zero" : row.QuantityVariance < 0 ? "stock-low" : "stock-positive")">
+                                    @(row.QuantityVariance > 0 ? "+" : "")@UiText.Qty(row.QuantityVariance)
+                                </td>
+                                <td class="num">@UiText.Money(row.StandardAmount)</td>
+                                <td class="num fw-semibold">@UiText.Money(row.IssuedAmount)</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6" class="text-end fw-semibold">Tổng chi phí vật tư</td>
+                            <td class="num fw-semibold">@UiText.Money(Model.StandardCost)</td>
+                            <td class="num fw-bold text-brand">@UiText.Money(Model.ActualCost)</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Phiếu cấp phát vật tư</span>
+                @if (canIssue)
+                {
+                    <a class="btn btn-sm btn-primary" asp-controller="MaterialIssues" asp-action="Create" asp-route-orderId="@order.Id">
+                        <i class="bi bi-plus-lg me-1"></i>Tạo phiếu cấp phát
+                    </a>
+                }
+            </div>
+            <div class="table-responsive">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>Số phiếu</th>
+                            <th>Ngày</th>
+                            <th>Kho xuất</th>
+                            <th class="text-end">Giá trị</th>
+                            <th>Trạng thái</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.MaterialIssues.Count == 0)
+                        {
+                            <tr><td colspan="6"><div class="empty-state py-4"><i class="bi bi-arrow-down-square"></i><strong>Chưa có phiếu cấp phát</strong><p>Duyệt lệnh và tạo phiếu cấp phát vật tư.</p></div></td></tr>
+                        }
+                        @foreach (var issue in Model.MaterialIssues)
+                        {
+                            <tr>
+                                <td><a class="strong-code" asp-controller="MaterialIssues" asp-action="Details" asp-route-id="@issue.Id">@issue.IssueNo</a></td>
+                                <td class="nowrap">@UiText.Date(issue.IssueDate)</td>
+                                <td>@issue.Warehouse?.Name</td>
+                                <td class="num">@UiText.Money(issue.TotalAmount)</td>
+                                <td>@Html.Raw(UiText.Badge(UiText.StatusLabel(issue.Status), UiText.StatusCss(issue.Status)))</td>
+                                <td><a class="icon-link" asp-controller="MaterialIssues" asp-action="Details" asp-route-id="@issue.Id"><i class="bi bi-eye"></i></a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (order.Outputs.Count > 0)
+        {
+            <div class="card">
+                <div class="card-header">Sản lượng hoàn thành</div>
+                <div class="table-responsive">
+                    <table class="table-erp">
+                        <thead>
+                            <tr>
+                                <th>Ngày ghi nhận</th>
+                                <th class="text-end">Sản lượng tốt</th>
+                                <th class="text-end">Sản lượng lỗi</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Tổng giá trị</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var output in order.Outputs.OrderByDescending(x => x.OutputDate))
+                            {
+                                <tr>
+                                    <td>@UiText.Date(output.OutputDate)</td>
+                                    <td class="num stock-positive fw-semibold">@UiText.Qty(output.GoodQuantity)</td>
+                                    <td class="num @(output.DefectQuantity > 0 ? "stock-zero" : "")">@UiText.Qty(output.DefectQuantity)</td>
+                                    <td class="num">@UiText.Money(output.UnitCost)</td>
+                                    <td class="num">@UiText.Money(output.TotalCost)</td>
+                                    <td class="text-muted-sm">@output.Note</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card mb-3">
+            <div class="card-header">Xử lý lệnh</div>
+            <div class="card-body">
+                @if (order.Status is ProductionOrderStatus.Completed or ProductionOrderStatus.Cancelled)
+                {
+                    <div class="alert @(order.Status == ProductionOrderStatus.Completed ? "alert-success" : "alert-danger") mb-0">
+                        <strong>@UiText.ProductionStatusLabel(order.Status).</strong>
+                        @if (order.Status == ProductionOrderStatus.Completed)
+                        {
+                            <div class="small mt-1">Sản lượng tốt @UiText.Qty(order.ActualQuantity) · lỗi @UiText.Qty(order.DefectQuantity).</div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="d-grid gap-2">
+                        @if (canSubmit)
+                        {
+                            <form asp-action="Submit" asp-route-id="@order.Id" method="post" data-confirm="Trình duyệt lệnh sản xuất @order.OrderNo?">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-primary w-100" type="submit"><i class="bi bi-send me-1"></i>Trình duyệt lệnh</button>
+                            </form>
+                        }
+                        @if (canApproveNow)
+                        {
+                            <form asp-action="Approve" asp-route-id="@order.Id" method="post" data-confirm="Phê duyệt lệnh sản xuất @order.OrderNo?">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-success w-100" type="submit"><i class="bi bi-check2-circle me-1"></i>Phê duyệt lệnh</button>
+                            </form>
+                        }
+                        @if (canIssue)
+                        {
+                            <a class="btn btn-outline-primary" asp-controller="MaterialIssues" asp-action="Create" asp-route-orderId="@order.Id">
+                                <i class="bi bi-arrow-down-square me-1"></i>Cấp phát vật tư
+                            </a>
+                        }
+                        @if (canComplete)
+                        {
+                            <a class="btn btn-primary" asp-action="Complete" asp-route-id="@order.Id">
+                                <i class="bi bi-check2-square me-1"></i>Ghi nhận hoàn thành
+                            </a>
+                        }
+                        @if (canCancel)
+                        {
+                            <button class="btn btn-light text-danger" type="button" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
+                                <i class="bi bi-x-octagon me-1"></i>Hủy lệnh
+                            </button>
+                        }
+                        @if (!canSubmit && !canApproveNow && !canIssue && !canComplete && !canCancel)
+                        {
+                            <div class="text-muted-sm"><i class="bi bi-hourglass-split me-1"></i>Bạn không có thao tác khả dụng ở trạng thái này.</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Tiến độ sản lượng</div>
+            <div class="card-body">
+                @{
+                    var progress = order.PlannedQuantity > 0 ? Math.Min(100, order.ActualQuantity / order.PlannedQuantity * 100) : 0;
+                }
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted-sm">Thực tế / kế hoạch</span>
+                    <strong>@UiText.Percent(progress)</strong>
+                </div>
+                <div class="progress mb-3"><div class="progress-bar" style="width:@progress.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"></div></div>
+                <div class="summary-row"><span>Kế hoạch</span><strong>@UiText.Qty(order.PlannedQuantity) @order.FinishedGoodItem?.Unit</strong></div>
+                <div class="summary-row"><span>Sản lượng tốt</span><strong class="stock-positive">@UiText.Qty(order.ActualQuantity)</strong></div>
+                <div class="summary-row"><span>Sản lượng lỗi</span><strong class="stock-zero">@UiText.Qty(order.DefectQuantity)</strong></div>
+                <div class="summary-row"><span>Định mức NVL</span><strong>@UiText.Money(Model.StandardCost) đ</strong></div>
+                <div class="summary-row"><span>Thực tế NVL</span><strong>@UiText.Money(Model.ActualCost) đ</strong></div>
+                <div class="summary-row total"><span>Chênh lệch</span><span class="@(variance > 0 ? "stock-zero" : "stock-positive")">@UiText.Money(variance) đ</span></div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Thông tin lệnh</div>
+            <div class="card-body">
+                <div class="detail-item mb-3">
+                    <label>Thành phẩm</label>
+                    <div>@order.FinishedGoodItem?.Name</div>
+                    <div class="text-muted-sm">@order.FinishedGoodItem?.Code · @order.FinishedGoodItem?.Unit</div>
+                </div>
+                <div class="detail-item mb-3">
+                    <label>Định mức áp dụng</label>
+                    <div>@order.Bom?.Code</div>
+                    <div class="text-muted-sm">@order.Bom?.Name · v@(order.Bom?.Version)</div>
+                </div>
+                <div class="detail-item mb-3">
+                    <label>Kho nhập thành phẩm</label>
+                    <div>@order.OutputWarehouse?.Name</div>
+                </div>
+                <div class="detail-item mb-3">
+                    <label>Thời gian</label>
+                    <div>@UiText.Date(order.StartDate) → @UiText.Date(order.DueDate)</div>
+                </div>
+                <div class="detail-item mb-3">
+                    <label>Người tạo / trình duyệt</label>
+                    <div>@UserName(order.CreatedById)</div>
+                    <div class="text-muted-sm">@UiText.DateTimeLocal(order.SubmittedAt)</div>
+                </div>
+                <div class="detail-item mb-3">
+                    <label>Người phê duyệt</label>
+                    <div>@UserName(order.ApprovedById)</div>
+                    <div class="text-muted-sm">@UiText.DateTimeLocal(order.ApprovedAt)</div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(order.Note))
+                {
+                    <div class="detail-item">
+                        <label>Ghi chú</label>
+                        <div class="text-muted-sm">@order.Note</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (canCancel)
+{
+    <div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="Cancel" asp-route-id="@order.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="cancelOrderLabel">Hủy lệnh @order.OrderNo</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted-sm">Lệnh đã hủy không thể cấp phát hoặc hoàn thành. Nhập lý do để lưu nhật ký.</p>
+                        <label class="form-label" for="cancelOrderReason">Lý do hủy</label>
+                        <textarea id="cancelOrderReason" name="reason" class="form-control" rows="3" maxlength="500" required
+                                  placeholder="VD: Thay đổi kế hoạch sản xuất..."></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-x-octagon me-1"></i>Xác nhận hủy</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

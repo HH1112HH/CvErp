@@ -1,0 +1,96 @@
+@model SupplierListViewModel
+@{
+    ViewData["Title"] = "Nhà cung cấp";
+    ViewData["Subtitle"] = "Đối tác cung cấp nguyên vật liệu, phụ kiện và bao bì.";
+    var canEdit = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Manager);
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Danh mục nhà cung cấp</h2>
+        <p class="page-subtitle">@Model.Suppliers.TotalCount nhà cung cấp</p>
+    </div>
+    <div class="toolbar">
+        @if (canEdit)
+        {
+            <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg me-1"></i>Thêm nhà cung cấp</a>
+        }
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-5">
+            <label class="form-label" for="search">Tìm kiếm</label>
+            <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="Mã, tên, mã số thuế, điện thoại..." />
+        </div>
+        <div class="span-3">
+            <label class="form-label" for="active">Trạng thái</label>
+            <select id="active" name="active" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="true" selected="@(Model.Active == true)">Đang hợp tác</option>
+                <option value="false" selected="@(Model.Active == false)">Ngừng hợp tác</option>
+            </select>
+        </div>
+        <div class="span-4 d-flex align-items-end gap-2">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Lọc</button>
+            <a class="btn btn-light" asp-action="Index">Xóa lọc</a>
+        </div>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Nhà cung cấp</th>
+                    <th>Mã số thuế</th>
+                    <th>Liên hệ</th>
+                    <th>Địa chỉ</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Suppliers.Items.Count == 0)
+                {
+                    <tr><td colspan="7"><div class="empty-state"><i class="bi bi-truck"></i><strong>Không tìm thấy nhà cung cấp</strong><p>Thử thay đổi bộ lọc.</p></div></td></tr>
+                }
+                @foreach (var supplier in Model.Suppliers.Items)
+                {
+                    <tr>
+                        <td class="strong-code">@supplier.Code</td>
+                        <td class="fw-semibold">@supplier.Name</td>
+                        <td class="text-muted-sm">@supplier.TaxCode</td>
+                        <td>
+                            <div>@supplier.Phone</div>
+                            <div class="text-muted-sm">@supplier.Email</div>
+                        </td>
+                        <td class="text-muted-sm" style="max-width:260px;">@supplier.Address</td>
+                        <td>
+                            @if (supplier.IsActive)
+                            {
+                                <span class="badge text-bg-success">Đang hợp tác</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">Ngừng</span>
+                            }
+                        </td>
+                        <td>
+                            @if (canEdit)
+                            {
+                                <div class="table-actions">
+                                    <a class="icon-link" title="Sửa" asp-action="Edit" asp-route-id="@supplier.Id"><i class="bi bi-pencil"></i></a>
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="Model.Suppliers" />
+</div>

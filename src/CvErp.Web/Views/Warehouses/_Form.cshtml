@@ -1,0 +1,24 @@
+@model WarehouseEditViewModel
+<div class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="Code" class="form-label required"></label>
+        <input asp-for="Code" class="form-control text-uppercase" placeholder="VD: KHO-NVL" />
+        <span asp-validation-for="Code" class="text-danger small"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="Name" class="form-label required"></label>
+        <input asp-for="Name" class="form-control" placeholder="Tên kho" />
+        <span asp-validation-for="Name" class="text-danger small"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="Location" class="form-label"></label>
+        <input asp-for="Location" class="form-control" placeholder="Nhà máy, khu công nghiệp, địa chỉ..." />
+        <span asp-validation-for="Location" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <div class="form-check form-switch mb-2">
+            <input asp-for="IsActive" class="form-check-input" role="switch" />
+            <label asp-for="IsActive" class="form-check-label"></label>
+        </div>
+    </div>
+</div>

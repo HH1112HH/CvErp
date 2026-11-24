@@ -1,0 +1,24 @@
+model Model
+	culture: vi-VN
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: vi-VN
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table vw_InventoryOnHand
+ref table vw_ProductionPerformance
+ref table vw_MaterialCostVariance
+ref table vw_ProductionOrderProgress
+ref table vw_StockMovement
+ref table vw_OutputMonthly
+ref table DimProduct
+ref table DimWarehouse
+ref table _Measures
+
+ref cultureInfo vi-VN
+

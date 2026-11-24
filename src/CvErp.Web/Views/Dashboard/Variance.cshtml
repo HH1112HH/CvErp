@@ -1,0 +1,185 @@
+@model VarianceDashboardViewModel
+@{
+    ViewData["Title"] = "Chênh lệch chi phí";
+    ViewData["Subtitle"] = "So sánh chi phí nguyên vật liệu thực tế với định mức BOM.";
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Phân tích chênh lệch định mức</h2>
+        <p class="page-subtitle">Kỳ @UiText.Date(Model.From) – @UiText.Date(Model.To)</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-outline-primary" asp-controller="Reports" asp-action="Variance" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")">
+            <i class="bi bi-file-earmark-bar-graph me-1"></i>Báo cáo chi tiết
+        </a>
+        <a class="btn btn-outline-primary" asp-controller="Reports" asp-action="ExportVariance" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+        </a>
+    </div>
+</div>
+
+<partial name="_DateRangeFilter" model="@(new DateRangeFilterModel { From = Model.From, To = Model.To, Action = "Variance", Controller = "Dashboard", Label = "Kỳ phân tích" })" />
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-blue"><i class="bi bi-clipboard-check"></i></div>
+        <div>
+            <div class="kpi-label">Chi phí định mức</div>
+            <div class="kpi-value">@UiText.Money(Model.Data.StandardCost)<small> đ</small></div>
+            <div class="kpi-note">Theo BOM và sản lượng kế hoạch</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-violet"><i class="bi bi-receipt"></i></div>
+        <div>
+            <div class="kpi-label">Chi phí thực tế</div>
+            <div class="kpi-value">@UiText.Money(Model.Data.ActualCost)<small> đ</small></div>
+            <div class="kpi-note">Theo phiếu cấp phát đã ghi sổ</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon @(Model.Data.Variance > 0 ? "bg-soft-red" : "bg-soft-teal")">
+            <i class="bi bi-arrow-left-right"></i>
+        </div>
+        <div>
+            <div class="kpi-label">Chênh lệch</div>
+            <div class="kpi-value">@UiText.Money(Model.Data.Variance)<small> đ</small></div>
+            <div class="kpi-note">
+                <span class="@(Model.Data.Variance > 0 ? "down" : "up")">@UiText.Percent(Model.Data.VariancePercent)</span>
+                so với định mức
+            </div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-amber"><i class="bi bi-exclamation-octagon"></i></div>
+        <div>
+            <div class="kpi-label">Vật tư vượt định mức</div>
+            <div class="kpi-value">@Model.Data.OverrunItemCount<small> mã</small></div>
+            <div class="kpi-note">@Model.Data.OrderCount lệnh sản xuất trong kỳ</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-7">
+        <div class="chart-card h-100">
+            <div class="chart-title">Định mức và thực tế theo tháng</div>
+            <div class="chart-sub">Tính theo lệnh hoàn thành · đơn vị đồng</div>
+            <div class="chart-box"><canvas id="varianceChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="card h-100">
+            <div class="card-header">Top vật tư vượt định mức</div>
+            <div class="table-responsive">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>Vật tư</th>
+                            <th class="text-end">Vượt SL</th>
+                            <th class="text-end">Chênh lệch</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Data.TopOverruns.Count == 0)
+                        {
+                            <tr><td colspan="3"><div class="empty-state py-4"><i class="bi bi-check2-circle"></i><strong>Không có vật tư vượt định mức</strong></div></td></tr>
+                        }
+                        @foreach (var row in Model.Data.TopOverruns.Take(7))
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@row.Name</div>
+                                    <div class="text-muted-sm"><span class="strong-code">@row.Code</span> · @UiText.Qty(row.StandardQuantity) → @UiText.Qty(row.ActualQuantity) @row.Unit</div>
+                                </td>
+                                <td class="num stock-zero">+@UiText.Qty(row.QuantityVariance)</td>
+                                <td class="num">
+                                    <span class="badge @(row.AmountVariance > 0 ? "text-bg-danger" : "text-bg-success")">
+                                        @UiText.Money(row.AmountVariance) đ
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Chênh lệch theo lệnh sản xuất</span>
+        <span class="text-muted-sm">@Model.Data.Orders.Count lệnh</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Số lệnh</th>
+                    <th>Thành phẩm</th>
+                    <th class="text-end">SL kế hoạch</th>
+                    <th class="text-end">Định mức</th>
+                    <th class="text-end">Thực tế</th>
+                    <th class="text-end">Chênh lệch</th>
+                    <th class="text-end">Tỷ lệ</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Data.Orders.Count == 0)
+                {
+                    <tr><td colspan="8"><div class="empty-state py-4"><i class="bi bi-inbox"></i><strong>Chưa có dữ liệu chi phí</strong><p>Các lệnh cần được duyệt và cấp phát vật tư.</p></div></td></tr>
+                }
+                @foreach (var order in Model.Data.Orders)
+                {
+                    <tr>
+                        <td><a class="strong-code" asp-controller="ProductionOrders" asp-action="Details" asp-route-id="@order.Id">@order.OrderNo</a></td>
+                        <td>@order.ProductName</td>
+                        <td class="num">@UiText.Qty(order.PlannedQuantity)</td>
+                        <td class="num">@UiText.Money(order.StandardCost)</td>
+                        <td class="num">@UiText.Money(order.ActualCost)</td>
+                        <td class="num @(order.Variance > 0 ? "stock-zero" : "stock-positive")">
+                            @(order.Variance > 0 ? "+" : "")@UiText.Money(order.Variance)
+                        </td>
+                        <td class="num">
+                            <span class="badge @(order.VariancePercent > 0 ? "text-bg-danger" : "text-bg-success")">
+                                @UiText.Percent(order.VariancePercent)
+                            </span>
+                        </td>
+                        <td>@Html.Raw(UiText.Badge(UiText.ProductionStatusLabel(order.Status), UiText.ProductionStatusCss(order.Status)))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            if (!window.Chart) return;
+
+            const monthly = @Html.Raw(JsonSerializer.Serialize(new
+            {
+                labels = Model.Data.Monthly.Select(x => x.Month).ToList(),
+                standard = Model.Data.Monthly.Select(x => x.StandardCost).ToList(),
+                actual = Model.Data.Monthly.Select(x => x.ActualCost).ToList()
+            }));
+
+            new Chart(document.getElementById('varianceChart'), {
+                type: 'bar',
+                data: {
+                    labels: monthly.labels,
+                    datasets: [
+                        { label: 'Định mức', data: monthly.standard, backgroundColor: '#9db4c6', borderRadius: 6, maxBarThickness: 28 },
+                        { label: 'Thực tế', data: monthly.actual, backgroundColor: '#146c8a', borderRadius: 6, maxBarThickness: 28 }
+                    ]
+                },
+                options: erpCharts.barOptions('đ')
+            });
+        })();
+    </script>
+}

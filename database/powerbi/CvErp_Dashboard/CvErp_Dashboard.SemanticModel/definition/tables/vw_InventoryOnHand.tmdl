@@ -1,0 +1,109 @@
+table vw_InventoryOnHand
+	lineageTag: a5b1ff40-a12c-5778-af92-68101c6fecb4
+
+	column ItemId
+		dataType: int64
+		isHidden
+		lineageTag: 9db59234-84ce-5b8e-8821-7c84d6450e14
+		summarizeBy: none
+		sourceColumn: ItemId
+
+	column ItemCode
+		dataType: string
+		lineageTag: bf7e9bef-3461-5eba-ad93-f57ecc617370
+		summarizeBy: none
+		sourceColumn: ItemCode
+
+	column ItemName
+		dataType: string
+		lineageTag: 1f86fa6f-1745-54f3-b528-4b93b97bde39
+		summarizeBy: none
+		sourceColumn: ItemName
+
+	column Unit
+		dataType: string
+		lineageTag: d26449a5-7eb6-5992-96e7-48a64db671de
+		summarizeBy: none
+		sourceColumn: Unit
+
+	column Category
+		dataType: string
+		lineageTag: b129c2f6-28c1-5528-aa59-694849c24877
+		summarizeBy: none
+		sourceColumn: Category
+
+	column ItemTypeName
+		dataType: string
+		lineageTag: 1426605b-5432-51d5-8709-507bafe4fd28
+		summarizeBy: none
+		sourceColumn: ItemTypeName
+
+	column MinStock
+		dataType: double
+		formatString: #,##0
+		lineageTag: f103eded-7bdb-5c36-ab62-544ffcc16f71
+		summarizeBy: none
+		sourceColumn: MinStock
+
+	column StandardCost
+		dataType: double
+		formatString: #,##0
+		lineageTag: 73aa453d-edca-56fa-8a66-d4359eca4712
+		summarizeBy: none
+		sourceColumn: StandardCost
+
+	column WarehouseId
+		dataType: int64
+		isHidden
+		lineageTag: d17786d3-9f6e-5f4f-a40c-cd3d52a10635
+		summarizeBy: none
+		sourceColumn: WarehouseId
+
+	column WarehouseCode
+		dataType: string
+		lineageTag: b7d38e5d-6f1c-5f88-946e-23772f281ce0
+		summarizeBy: none
+		sourceColumn: WarehouseCode
+
+	column WarehouseName
+		dataType: string
+		lineageTag: 4a3b29d5-cd54-5c1e-afb1-09aac82ccb12
+		summarizeBy: none
+		sourceColumn: WarehouseName
+
+	column OnHandQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: de874837-fa66-55cf-a89c-d7c8443f0885
+		summarizeBy: sum
+		sourceColumn: OnHandQuantity
+
+	column StockValue
+		dataType: double
+		formatString: #,##0
+		lineageTag: 3888576d-4025-56ff-aeb2-fb6be8d18333
+		summarizeBy: sum
+		sourceColumn: StockValue
+
+	column AvgUnitCost
+		dataType: double
+		formatString: #,##0
+		lineageTag: a660ab4c-f5fe-57fd-af9b-ec7743f2ee9e
+		summarizeBy: none
+		sourceColumn: AvgUnitCost
+
+	column IsBelowMinStock
+		dataType: int64
+		lineageTag: 5e4460b1-a868-59ea-ab20-3157696a49fc
+		summarizeBy: none
+		sourceColumn: IsBelowMinStock
+
+	partition vw_InventoryOnHand = m
+		mode: import
+		source =
+				let
+					Source = Sql.Database("localhost\SQLEXPRESS", "CvErp"),
+					Data = Source{[Schema="dbo",Item="vw_InventoryOnHand"]}[Data]
+				in
+					Data
+

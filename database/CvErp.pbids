@@ -1,0 +1,15 @@
+{
+  "version": "0.1",
+  "connections": [
+    {
+      "details": {
+        "protocol": "tds",
+        "address": {
+          "server": "localhost\\SQLEXPRESS",
+          "database": "CvErp"
+        }
+      },
+      "mode": "Import"
+    }
+  ]
+}

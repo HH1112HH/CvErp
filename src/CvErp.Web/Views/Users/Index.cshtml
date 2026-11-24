@@ -1,0 +1,91 @@
+@model UserListViewModel
+@{
+    ViewData["Title"] = "Người dùng & vai trò";
+    ViewData["Subtitle"] = "Quản lý tài khoản đăng nhập và phân quyền theo vai trò.";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Người dùng &amp; vai trò</h2>
+        <p class="page-subtitle">@Model.Users.Count tài khoản · năm vai trò nghiệp vụ</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-person-plus me-1"></i>Thêm người dùng</a>
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-6">
+            <label class="form-label" for="search">Tìm kiếm</label>
+            <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="Tên đăng nhập, họ tên, email..." />
+        </div>
+        <div class="span-4">
+            <label class="form-label" for="role">Vai trò</label>
+            <select id="role" name="role" class="form-select">
+                <option value="">Tất cả vai trò</option>
+                @foreach (var option in Model.RoleOptions)
+                {
+                    <option value="@option.Value" selected="@(option.Value == Model.Role ? "selected" : null)">@option.Text</option>
+                }
+            </select>
+        </div>
+        <div class="span-2 d-flex align-items-end gap-2">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Lọc</button>
+            <a class="btn btn-light" asp-action="Index">Xóa</a>
+        </div>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Tên đăng nhập</th>
+                    <th>Họ và tên</th>
+                    <th>Email</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Users.Count == 0)
+                {
+                    <tr><td colspan="7"><div class="empty-state"><i class="bi bi-people"></i><strong>Không tìm thấy người dùng</strong><p>Thử thay đổi bộ lọc.</p></div></td></tr>
+                }
+                @foreach (var row in Model.Users)
+                {
+                    <tr>
+                        <td class="strong-code">@row.User.UserName</td>
+                        <td class="fw-semibold">@row.User.FullName</td>
+                        <td class="text-muted-sm">@row.User.Email</td>
+                        <td>
+                            @foreach (var role in row.Roles)
+                            {
+                                <span class="badge text-bg-light">@UiText.RoleLabel(role)</span>
+                            }
+                        </td>
+                        <td>
+                            @if (row.User.IsActive)
+                            {
+                                <span class="badge text-bg-success">Đang hoạt động</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">Đã khóa</span>
+                            }
+                        </td>
+                        <td class="text-muted-sm nowrap">@UiText.DateLocal(row.User.CreatedAt)</td>
+                        <td>
+                            <div class="table-actions">
+                                <a class="icon-link" title="Sửa" asp-action="Edit" asp-route-id="@row.User.Id"><i class="bi bi-pencil"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

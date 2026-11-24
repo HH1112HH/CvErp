@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "CvErp_Dashboard"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "612d95a8-0f29-5aae-a583-3b780756883f"
+  }
+}

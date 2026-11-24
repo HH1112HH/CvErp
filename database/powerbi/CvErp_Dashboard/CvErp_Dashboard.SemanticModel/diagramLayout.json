@@ -1,0 +1,139 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 1345.856663979871,
+            "y": 350.22511423218293
+          },
+          "nodeIndex": "_Measures",
+          "nodeLineageTag": "96d47863-78f0-594a-8bd4-110002cd6513",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 458.70505913377269,
+            "y": 300.22489634854685
+          },
+          "nodeIndex": "DimProduct",
+          "nodeLineageTag": "b7fc40b5-417c-5adf-b2a9-82ab08cd0909",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1111.856663979871,
+            "y": 97.953689441230267
+          },
+          "nodeIndex": "DimWarehouse",
+          "nodeLineageTag": "632ac75b-c66f-5f3b-8ee9-a2ca7fd4118a",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 953.08213577587264,
+            "y": 300.13519004431328
+          },
+          "nodeIndex": "vw_InventoryOnHand",
+          "nodeLineageTag": "a5b1ff40-a12c-5778-af92-68101c6fecb4",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 181.67529161306976,
+            "y": -49.972940943769572
+          },
+          "nodeIndex": "vw_MaterialCostVariance",
+          "nodeLineageTag": "05c26d21-1c76-5bea-8909-d6d93a88315e",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50,
+            "y": 300.25180539156122
+          },
+          "nodeIndex": "vw_OutputMonthly",
+          "nodeLineageTag": "a21d8894-1739-5dbe-b2f7-2f995e28b5a9",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 799.41369970484277,
+            "y": 650.44597997877224
+          },
+          "nodeIndex": "vw_ProductionOrderProgress",
+          "nodeLineageTag": "8c4507ff-626f-561b-a4fa-5322d380f761",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 305.93633576131083,
+            "y": 650.45022846436586
+          },
+          "nodeIndex": "vw_ProductionPerformance",
+          "nodeLineageTag": "0da21c6e-282e-5901-b863-bc6f91793ca8",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 682.2011430545042,
+            "y": -50
+          },
+          "nodeIndex": "vw_StockMovement",
+          "nodeLineageTag": "60d7634b-91d7-50fe-b28c-0c6e34c97fb0",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}

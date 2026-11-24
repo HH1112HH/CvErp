@@ -1,0 +1,28 @@
+@{
+    var code = ViewData["StatusCode"] as int? ?? 404;
+    var title = code switch
+    {
+        403 => "Không có quyền truy cập",
+        404 => "Không tìm thấy trang",
+        400 => "Yêu cầu không hợp lệ",
+        500 => "Lỗi hệ thống",
+        _ => "Không thể xử lý yêu cầu"
+    };
+    ViewData["Title"] = title;
+    Layout = "_AuthLayout";
+}
+<div class="auth-shell" style="grid-template-columns:1fr;max-width:520px;">
+    <section class="auth-main text-center">
+        <div class="display-5 fw-bold text-brand mb-1">@code</div>
+        <h2>@title</h2>
+        <p class="auth-sub">
+            Nội dung bạn tìm không tồn tại, đã bị di chuyển hoặc tài khoản không đủ quyền.
+        </p>
+        <div class="d-flex gap-2 justify-content-center">
+            <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary">
+                <i class="bi bi-grid-1x2 me-1"></i>Về tổng quan
+            </a>
+            <a href="javascript:history.back()" class="btn btn-light">Quay lại</a>
+        </div>
+    </section>
+</div>

@@ -1,0 +1,82 @@
+@model LowStockReportViewModel
+@{
+    ViewData["Title"] = "Vật tư dưới định mức";
+    ViewData["Subtitle"] = "Danh sách vật tư cần bổ sung theo ngưỡng tồn tối thiểu.";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Vật tư dưới định mức</h2>
+        <p class="page-subtitle">@Model.ItemCount mã cần bổ sung · giá trị thiếu hụt ước tính @UiText.Money(Model.TotalShortageValue) đ</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-light" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Báo cáo</a>
+        <a class="btn btn-outline-primary" asp-action="ExportLowStock"><i class="bi bi-file-earmark-excel me-1"></i>Xuất CSV</a>
+        <button class="btn btn-outline-primary" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i>In</button>
+    </div>
+</div>
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-amber"><i class="bi bi-exclamation-triangle"></i></div>
+        <div>
+            <div class="kpi-label">Số mã dưới định mức</div>
+            <div class="kpi-value">@Model.ItemCount<small> mã</small></div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-red"><i class="bi bi-cash-stack"></i></div>
+        <div>
+            <div class="kpi-label">Giá trị thiếu hụt ước tính</div>
+            <div class="kpi-value">@UiText.Money(Model.TotalShortageValue)<small> đ</small></div>
+            <div class="kpi-note">Theo đơn giá chuẩn hiện tại</div>
+        </div>
+    </div>
+</div>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Mã vật tư</th>
+                    <th>Tên vật tư</th>
+                    <th>ĐVT</th>
+                    <th class="text-end">Tồn hiện tại</th>
+                    <th class="text-end">Tồn tối thiểu</th>
+                    <th class="text-end">Thiếu hụt</th>
+                    <th>Mức độ</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr><td colspan="8"><div class="empty-state"><i class="bi bi-shield-check"></i><strong>Tất cả vật tư đều đủ tồn</strong><p>Không có mã nào dưới ngưỡng tối thiểu.</p></div></td></tr>
+                }
+                @foreach (var row in Model.Rows)
+                {
+                    var ratio = row.MinStock > 0 ? Math.Min(100, row.OnHand / row.MinStock * 100) : 0;
+                    <tr>
+                        <td class="strong-code">@row.Code</td>
+                        <td class="fw-semibold">@row.Name</td>
+                        <td>@row.Unit</td>
+                        <td class="num stock-low">@UiText.Qty(row.OnHand)</td>
+                        <td class="num">@UiText.Qty(row.MinStock)</td>
+                        <td class="num"><span class="badge text-bg-warning">@UiText.Qty(row.Shortage)</span></td>
+                        <td style="min-width:140px;">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1"><div class="progress-bar" style="width:@ratio.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"></div></div>
+                                <span class="text-muted-sm">@UiText.Percent(ratio)</span>
+                            </div>
+                        </td>
+                        <td>
+                            <a class="icon-link" title="Thẻ kho" asp-controller="Stock" asp-action="Card" asp-route-itemId="@row.ItemId">
+                                <i class="bi bi-card-list"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

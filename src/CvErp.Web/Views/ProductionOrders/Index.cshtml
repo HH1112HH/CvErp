@@ -1,0 +1,117 @@
+@model ProductionOrderListViewModel
+@{
+    ViewData["Title"] = "Lệnh sản xuất";
+    ViewData["Subtitle"] = "Kế hoạch sản xuất theo định mức BOM, theo dõi cấp phát và sản lượng hoàn thành.";
+    var canCreate = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Production);
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Lệnh sản xuất</h2>
+        <p class="page-subtitle">@Model.Orders.TotalCount lệnh · nhu cầu vật tư được chốt tại thời điểm tạo lệnh</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-outline-primary" asp-controller="Dashboard" asp-action="Production">
+            <i class="bi bi-bar-chart-line me-1"></i>Dashboard sản xuất
+        </a>
+        @if (canCreate)
+        {
+            <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg me-1"></i>Tạo lệnh sản xuất</a>
+        }
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-4">
+            <label class="form-label" for="search">Tìm kiếm</label>
+            <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="Số lệnh hoặc tên thành phẩm..." />
+        </div>
+        <div class="span-3">
+            <label class="form-label" for="status">Trạng thái</label>
+            <select id="status" name="status" class="form-select">
+                <option value="">Tất cả</option>
+                @foreach (var status in Enum.GetValues<ProductionOrderStatus>())
+                {
+                    <option value="@status" selected="@(Model.Status == status ? "selected" : null)">@UiText.ProductionStatusLabel(status)</option>
+                }
+            </select>
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="from">Hạn từ ngày</label>
+            <input id="from" type="date" name="from" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="to">Hạn đến ngày</label>
+            <input id="to" type="date" name="to" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="span-1 d-flex align-items-end">
+            <button class="btn btn-primary w-100" type="submit" title="Lọc"><i class="bi bi-search"></i></button>
+        </div>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Số lệnh</th>
+                    <th>Thành phẩm</th>
+                    <th class="text-end">Kế hoạch</th>
+                    <th class="text-end">Thực tế</th>
+                    <th>Tiến độ</th>
+                    <th>Bắt đầu</th>
+                    <th>Hạn hoàn thành</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Orders.Items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <i class="bi bi-clipboard"></i>
+                                <strong>Không tìm thấy lệnh sản xuất</strong>
+                                <p>Thử đổi bộ lọc hoặc tạo lệnh sản xuất mới.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @foreach (var order in Model.Orders.Items)
+                {
+                    var ratio = order.PlannedQuantity > 0 ? Math.Min(100, order.ActualQuantity / order.PlannedQuantity * 100) : 0;
+                    <tr>
+                        <td><a class="strong-code" asp-action="Details" asp-route-id="@order.Id">@order.OrderNo</a></td>
+                        <td>
+                            <div class="fw-semibold">@order.FinishedGoodItem?.Name</div>
+                            <div class="text-muted-sm">@order.FinishedGoodItem?.Code</div>
+                        </td>
+                        <td class="num">@UiText.Qty(order.PlannedQuantity)</td>
+                        <td class="num @(order.ActualQuantity > 0 ? "stock-positive" : "")">@UiText.Qty(order.ActualQuantity)</td>
+                        <td style="min-width:110px;">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1"><div class="progress-bar" style="width:@ratio.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"></div></div>
+                                <span class="text-muted-sm">@UiText.Percent(ratio)</span>
+                            </div>
+                        </td>
+                        <td class="nowrap">@UiText.Date(order.StartDate)</td>
+                        <td class="nowrap">@UiText.Date(order.DueDate)</td>
+                        <td>@Html.Raw(UiText.Badge(UiText.ProductionStatusLabel(order.Status), UiText.ProductionStatusCss(order.Status)))</td>
+                        <td>
+                            <div class="table-actions">
+                                <a class="icon-link" title="Chi tiết" asp-action="Details" asp-route-id="@order.Id"><i class="bi bi-eye"></i></a>
+                                @if (order.Status == ProductionOrderStatus.Draft && canCreate)
+                                {
+                                    <a class="icon-link" title="Sửa" asp-action="Edit" asp-route-id="@order.Id"><i class="bi bi-pencil"></i></a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="Model.Orders" />
+</div>

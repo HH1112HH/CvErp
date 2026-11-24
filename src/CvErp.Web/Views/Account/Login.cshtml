@@ -1,0 +1,106 @@
+@model CvErp.Web.ViewModels.Account.LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = "_AuthLayout";
+}
+
+<div class="auth-shell">
+    <aside class="auth-aside">
+        <div class="auth-brand">
+            <span class="brand-mark">VPH</span>
+            <div>
+                <strong>Vinatex Phú Hưng</strong>
+                <small>ERP · Kho &amp; Sản xuất</small>
+            </div>
+        </div>
+
+        <div class="auth-copy">
+            <div class="eyebrow">Bản demo ERP · Kho &amp; Sản xuất</div>
+            <h1>Quản trị vật tư,<br />định mức và sản xuất.</h1>
+            <p>
+                Luồng chứng từ khép kín từ nhập kho, cấp phát nguyên vật liệu đến ghi nhận
+                thành phẩm và phân tích chênh lệch chi phí theo định mức BOM.
+            </p>
+            <ul class="auth-features">
+                <li><i class="bi bi-check-lg"></i> Sổ cái kho là nguồn dữ liệu tồn kho duy nhất</li>
+                <li><i class="bi bi-check-lg"></i> Duyệt – ghi sổ một lần, chống ghi trùng</li>
+                <li><i class="bi bi-check-lg"></i> Phân tích chênh lệch định mức theo lệnh sản xuất</li>
+                <li><i class="bi bi-check-lg"></i> Phân quyền theo vai trò và nhật ký thao tác</li>
+            </ul>
+        </div>
+
+        <div class="auth-aside-foot">
+            <span>ASP.NET Core 10 · EF Core · SQL Server</span>
+            <span>Bản demo độc lập</span>
+        </div>
+    </aside>
+
+    <section class="auth-main">
+        <div>
+            <h2>Đăng nhập hệ thống</h2>
+            <p class="auth-sub">Sử dụng tài khoản demo bên dưới để trải nghiệm theo từng vai trò.</p>
+
+            <form method="post" asp-controller="Account" asp-action="Login" novalidate>
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Username" class="form-label"></label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-person"></i>
+                        <input asp-for="Username" class="form-control" autocomplete="username" autofocus placeholder="admin" />
+                    </div>
+                    <span asp-validation-for="Username" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label"></label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-lock"></i>
+                        <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="••••••••" />
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="form-check">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <label asp-for="RememberMe" class="form-check-label small text-muted"></label>
+                    </div>
+                    <span class="text-muted-sm"><i class="bi bi-shield-lock me-1"></i>Phiên đăng nhập 8 giờ</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
+                </button>
+            </form>
+
+            <div class="demo-box">
+                <div class="demo-title">Tài khoản demo · mật khẩu tương ứng</div>
+                <div class="demo-grid">
+                    <button type="button" class="demo-account" data-demo-user="admin" data-demo-pass="Admin@123">
+                        <span><strong>admin</strong><br />Quản trị</span><span>Admin@123</span>
+                    </button>
+                    <button type="button" class="demo-account" data-demo-user="manager" data-demo-pass="Manager@123">
+                        <span><strong>manager</strong><br />Quản lý</span><span>Manager@123</span>
+                    </button>
+                    <button type="button" class="demo-account" data-demo-user="kho" data-demo-pass="Kho@123">
+                        <span><strong>kho</strong><br />Thủ kho</span><span>Kho@123</span>
+                    </button>
+                    <button type="button" class="demo-account" data-demo-user="sanxuat" data-demo-pass="Sanxuat@123">
+                        <span><strong>sanxuat</strong><br />Sản xuất</span><span>Sanxuat@123</span>
+                    </button>
+                    <button type="button" class="demo-account" data-demo-user="muahang" data-demo-pass="Muahang@123">
+                        <span><strong>muahang</strong><br />Mua hàng</span><span>Muahang@123</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="auth-copyright">© @DateTime.Now.Year Vinatex Phú Hưng · Bản demo độc lập · Không phải hệ thống chính thức</div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

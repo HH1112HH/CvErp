@@ -1,0 +1,230 @@
+@model InventoryDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard kho";
+    ViewData["Subtitle"] = "Tồn kho, dòng nhập xuất và cảnh báo định mức tối thiểu.";
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Tồn kho &amp; luân chuyển</h2>
+        <p class="page-subtitle">Kỳ @UiText.Date(Model.From) – @UiText.Date(Model.To)</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-outline-primary" asp-controller="Stock" asp-action="Index">
+            <i class="bi bi-boxes me-1"></i>Bảng tồn kho
+        </a>
+        <a class="btn btn-outline-primary" asp-controller="Reports" asp-action="StockSummary">
+            <i class="bi bi-file-earmark-bar-graph me-1"></i>Tổng hợp tồn
+        </a>
+        <a class="btn btn-outline-primary" asp-controller="Reports" asp-action="Movements">
+            <i class="bi bi-arrow-left-right me-1"></i>Biến động kho
+        </a>
+    </div>
+</div>
+
+<partial name="_DateRangeFilter" model="@(new DateRangeFilterModel { From = Model.From, To = Model.To, Action = "Inventory", Controller = "Dashboard", Label = "Kỳ phân tích" })" />
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-blue"><i class="bi bi-safe2"></i></div>
+        <div>
+            <div class="kpi-label">Tổng giá trị tồn kho</div>
+            <div class="kpi-value">@UiText.Money(Model.Data.TotalStockValue)<small> đ</small></div>
+            <div class="kpi-note">Theo giá trị sổ cái hiện tại</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-teal"><i class="bi bi-upc-scan"></i></div>
+        <div>
+            <div class="kpi-label">Mã vật tư</div>
+            <div class="kpi-value">@Model.Data.ItemCount<small> mã</small></div>
+            <div class="kpi-note">@Model.Data.RawMaterialCount nguyên vật liệu đang quản lý</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-amber"><i class="bi bi-bell"></i></div>
+        <div>
+            <div class="kpi-label">Dưới tồn tối thiểu</div>
+            <div class="kpi-value">@Model.Data.LowStockCount<small> mã</small></div>
+            <div class="kpi-note">
+                @if (Model.Data.LowStockCount > 0)
+                {
+                    <a class="down" asp-controller="Stock" asp-action="Index" asp-route-lowStockOnly="true">Xem danh sách cần bổ sung</a>
+                }
+                else
+                {
+                    <span class="up">Tất cả trong ngưỡng an toàn</span>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-violet"><i class="bi bi-arrow-down-up"></i></div>
+        <div>
+            <div class="kpi-label">Nhập / xuất trong kỳ</div>
+            <div class="kpi-value">@UiText.Money(Model.Data.StockFlow.Sum(x => x.ReceiptValue))<small> đ nhập</small></div>
+            <div class="kpi-note">Xuất @UiText.Money(Model.Data.StockFlow.Sum(x => x.IssueValue)) đ</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-7">
+        <div class="chart-card h-100">
+            <div class="chart-title">Giá trị nhập – xuất theo tháng</div>
+            <div class="chart-sub">Đơn vị: đồng · nguồn sổ cái kho</div>
+            <div class="chart-box"><canvas id="stockFlowChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="chart-card h-100">
+            <div class="chart-title">Giá trị tồn theo kho</div>
+            <div class="chart-sub">Tỷ trọng giá trị đang lưu giữ</div>
+            <div class="chart-box"><canvas id="warehouseChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-7">
+        <div class="chart-card">
+            <div class="chart-title">Top vật tư tiêu hao</div>
+            <div class="chart-sub">Theo số lượng cấp phát đã ghi sổ trong kỳ</div>
+            <div class="chart-box"><canvas id="consumedChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Cảnh báo tồn thấp</span>
+                <a class="text-muted-sm" asp-controller="Reports" asp-action="LowStock">Báo cáo chi tiết</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>Vật tư</th>
+                            <th class="text-end">Tồn</th>
+                            <th class="text-end">Tối thiểu</th>
+                            <th class="text-end">Thiếu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Data.LowStock.Count == 0)
+                        {
+                            <tr><td colspan="4"><div class="empty-state py-4"><i class="bi bi-shield-check"></i><strong>Không có cảnh báo</strong></div></td></tr>
+                        }
+                        @foreach (var row in Model.Data.LowStock.Take(8))
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@row.Name</div>
+                                    <div class="text-muted-sm"><span class="strong-code">@row.Code</span></div>
+                                </td>
+                                <td class="num stock-low">@UiText.Qty(row.OnHand) @row.Unit</td>
+                                <td class="num">@UiText.Qty(row.MinStock)</td>
+                                <td class="num"><span class="badge text-bg-warning">@UiText.Qty(row.Shortage)</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Giao dịch kho gần nhất</span>
+        <a class="text-muted-sm" asp-controller="Reports" asp-action="Movements">Xem biến động</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Ngày</th>
+                    <th>Chứng từ</th>
+                    <th>Vật tư</th>
+                    <th>Kho</th>
+                    <th>Loại giao dịch</th>
+                    <th class="text-end">Số lượng</th>
+                    <th class="text-end">Giá trị</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var transaction in Model.Data.RecentTransactions)
+                {
+                    <tr>
+                        <td class="nowrap">@UiText.Date(transaction.Date)</td>
+                        <td class="strong-code">@transaction.ReferenceNo</td>
+                        <td>@transaction.ItemName</td>
+                        <td class="text-muted-sm">@transaction.WarehouseName</td>
+                        <td>@UiText.TxTypeLabel(transaction.Type)</td>
+                        <td class="num @(transaction.Quantity < 0 ? "stock-zero" : "stock-positive")">
+                            @(transaction.Quantity > 0 ? "+" : "")@UiText.Qty(transaction.Quantity)
+                        </td>
+                        <td class="num">@UiText.Money(transaction.Amount)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            if (!window.Chart) return;
+
+            const flow = @Html.Raw(JsonSerializer.Serialize(new
+            {
+                labels = Model.Data.StockFlow.Select(x => x.Month).ToList(),
+                receipt = Model.Data.StockFlow.Select(x => x.ReceiptValue).ToList(),
+                issue = Model.Data.StockFlow.Select(x => x.IssueValue).ToList()
+            }));
+
+            new Chart(document.getElementById('stockFlowChart'), {
+                type: 'bar',
+                data: {
+                    labels: flow.labels,
+                    datasets: [
+                        { label: 'Nhập kho', data: flow.receipt, backgroundColor: '#178a74', borderRadius: 6, maxBarThickness: 26 },
+                        { label: 'Xuất kho', data: flow.issue, backgroundColor: '#d99a3e', borderRadius: 6, maxBarThickness: 26 }
+                    ]
+                },
+                options: erpCharts.barOptions('đ')
+            });
+
+            const warehouse = @Html.Raw(JsonSerializer.Serialize(new
+            {
+                labels = Model.Data.StockByWarehouse.Select(x => x.WarehouseName).ToList(),
+                values = Model.Data.StockByWarehouse.Select(x => x.Value).ToList()
+            }));
+
+            new Chart(document.getElementById('warehouseChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: warehouse.labels,
+                    datasets: [{ data: warehouse.values, backgroundColor: erpCharts.palette, borderWidth: 2, borderColor: '#fff' }]
+                },
+                options: erpCharts.doughnutOptions('đ')
+            });
+
+            const consumed = @Html.Raw(JsonSerializer.Serialize(new
+            {
+                labels = Model.Data.TopConsumed.Select(x => x.Code + " · " + x.Name).ToList(),
+                values = Model.Data.TopConsumed.Select(x => x.Quantity).ToList()
+            }));
+
+            new Chart(document.getElementById('consumedChart'), {
+                type: 'bar',
+                data: {
+                    labels: consumed.labels,
+                    datasets: [{ label: 'Số lượng', data: consumed.values, backgroundColor: '#146c8a', borderRadius: 5, maxBarThickness: 20 }]
+                },
+                options: erpCharts.horizontalBarOptions()
+            });
+        })();
+    </script>
+}

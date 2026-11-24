@@ -1,0 +1,113 @@
+@model AuditLogListViewModel
+@{
+    ViewData["Title"] = "Nhật ký thao tác";
+    ViewData["Subtitle"] = "Truy vết thao tác của người dùng trên chứng từ, danh mục và hệ thống.";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Nhật ký thao tác</h2>
+        <p class="page-subtitle">@Model.Logs.TotalCount bản ghi · chỉ quản trị viên và quản lý được xem</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-outline-primary" asp-action="Export"
+           asp-route-search="@Model.Search" asp-route-actionFilter="@Model.Action" asp-route-entityName="@Model.EntityName"
+           asp-route-userName="@Model.UserName"
+           asp-route-from="@Model.From?.ToString("yyyy-MM-dd")" asp-route-to="@Model.To?.ToString("yyyy-MM-dd")">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất CSV
+        </a>
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-3">
+            <label class="form-label" for="search">Tìm kiếm</label>
+            <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="Mô tả, mã đối tượng, người dùng..." />
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="action">Hành động</label>
+            <select id="action" name="actionFilter" class="form-select">
+                <option value="">Tất cả</option>
+                @foreach (var action in Model.Actions)
+                {
+                    <option value="@action" selected="@(Model.Action == action ? "selected" : null)">@UiText.ActionLabel(action)</option>
+                }
+            </select>
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="entityName">Đối tượng</label>
+            <select id="entityName" name="entityName" class="form-select">
+                <option value="">Tất cả</option>
+                @foreach (var entity in Model.EntityNames)
+                {
+                    <option value="@entity" selected="@(Model.EntityName == entity ? "selected" : null)">@UiText.EntityLabel(entity)</option>
+                }
+            </select>
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="userName">Người dùng</label>
+            <select id="userName" name="userName" class="form-select">
+                <option value="">Tất cả</option>
+                @foreach (var user in Model.UserNames)
+                {
+                    <option value="@user" selected="@(Model.UserName == user ? "selected" : null)">@user</option>
+                }
+            </select>
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="from">Từ ngày</label>
+            <input id="from" type="date" name="from" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="span-1 d-flex align-items-end">
+            <button class="btn btn-primary w-100" type="submit" title="Lọc"><i class="bi bi-search"></i></button>
+        </div>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Người dùng</th>
+                    <th>Hành động</th>
+                    <th>Đối tượng</th>
+                    <th>Mã đối tượng</th>
+                    <th>Mô tả</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Logs.Items.Count == 0)
+                {
+                    <tr><td colspan="7"><div class="empty-state"><i class="bi bi-shield-check"></i><strong>Không có bản ghi</strong><p>Thử thay đổi bộ lọc hoặc khoảng thời gian.</p></div></td></tr>
+                }
+                @foreach (var log in Model.Logs.Items)
+                {
+                    var actionCss = log.Action switch
+                    {
+                        "CREATE" => "text-bg-success",
+                        "UPDATE" => "text-bg-info",
+                        "SUBMIT" => "text-bg-warning",
+                        "APPROVE" => "text-bg-primary",
+                        "POST" => "text-bg-success",
+                        "CANCEL" => "text-bg-danger",
+                        "LOGIN" => "text-bg-light",
+                        _ => "text-bg-secondary"
+                    };
+                    <tr>
+                        <td class="nowrap">@UiText.DateTimeLocal(log.Timestamp)</td>
+                        <td class="fw-semibold">@log.UserName</td>
+                        <td><span class="badge @actionCss">@UiText.ActionLabel(log.Action)</span></td>
+                        <td class="text-muted-sm">@UiText.EntityLabel(log.EntityName)</td>
+                        <td class="strong-code">@log.EntityId</td>
+                        <td style="max-width:420px;">@log.Description</td>
+                        <td class="text-muted-sm">@log.IpAddress</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="Model.Logs" />
+</div>

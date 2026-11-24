@@ -1,0 +1,104 @@
+table vw_StockMovement
+	lineageTag: 60d7634b-91d7-50fe-b28c-0c6e34c97fb0
+
+	column ItemId
+		dataType: int64
+		isHidden
+		lineageTag: 976f0162-e44f-52ad-8807-92070033587d
+		summarizeBy: none
+		sourceColumn: ItemId
+
+	column ItemCode
+		dataType: string
+		lineageTag: 45376f3e-8164-5619-a535-ce1615e6a240
+		summarizeBy: none
+		sourceColumn: ItemCode
+
+	column ItemName
+		dataType: string
+		lineageTag: c19fd1c8-4379-5c67-a2b8-3f71842ab459
+		summarizeBy: none
+		sourceColumn: ItemName
+
+	column Unit
+		dataType: string
+		lineageTag: 99adb7b8-768c-59c5-b818-0bf23e9933f6
+		summarizeBy: none
+		sourceColumn: Unit
+
+	column WarehouseId
+		dataType: int64
+		isHidden
+		lineageTag: c05f2fa4-b4ac-5e1a-b5d9-61a5b6ed66c0
+		summarizeBy: none
+		sourceColumn: WarehouseId
+
+	column WarehouseCode
+		dataType: string
+		lineageTag: cd0d839e-7dad-544f-950f-f6488087ae0c
+		summarizeBy: none
+		sourceColumn: WarehouseCode
+
+	column WarehouseName
+		dataType: string
+		lineageTag: 3ceee7b2-b41e-51d8-be50-bc02d65c9f4e
+		summarizeBy: none
+		sourceColumn: WarehouseName
+
+	column PeriodStart
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: dc86d2df-057d-53ef-85f9-000d9fa82616
+		summarizeBy: none
+		sourceColumn: PeriodStart
+
+	column PeriodLabel
+		dataType: string
+		lineageTag: d1b8fee2-38ba-5c6e-9661-d9795e8b963c
+		summarizeBy: none
+		sourceColumn: PeriodLabel
+
+	column ReceiptQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: 289853e3-1e52-50b8-b12d-c48959cb3296
+		summarizeBy: sum
+		sourceColumn: ReceiptQuantity
+
+	column IssueQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: d5b161de-a4a8-5c94-85fa-74361fad03b7
+		summarizeBy: none
+		sourceColumn: IssueQuantity
+
+	column NetQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: caa4c281-3d03-573e-a06c-2172d3e0ffe5
+		summarizeBy: sum
+		sourceColumn: NetQuantity
+
+	column NetValue
+		dataType: double
+		formatString: #,##0
+		lineageTag: e8db62e7-da2e-5eba-96f7-96deb72356db
+		summarizeBy: sum
+		sourceColumn: NetValue
+
+	column ClosingQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: 1350034c-eede-53a8-9b8e-393e0ec0b3fe
+		summarizeBy: sum
+		sourceColumn: ClosingQuantity
+
+	partition vw_StockMovement = m
+		mode: import
+		source =
+				let
+					Source = Sql.Database("localhost\SQLEXPRESS", "CvErp"),
+					Data = Source{[Schema="dbo",Item="vw_StockMovement"]}[Data]
+				in
+					Data
+

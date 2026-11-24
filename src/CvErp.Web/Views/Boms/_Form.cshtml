@@ -1,0 +1,151 @@
+@model BomEditViewModel
+@{
+    var lineIndex = 0;
+}
+<div class="row g-3">
+    <div class="col-md-3">
+        <label asp-for="Code" class="form-label required"></label>
+        <input asp-for="Code" class="form-control text-uppercase" placeholder="VD: BOM-BAN-AN" />
+        <span asp-validation-for="Code" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Name" class="form-label required"></label>
+        <input asp-for="Name" class="form-control" placeholder="Tên định mức" />
+        <span asp-validation-for="Name" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Version" class="form-label required"></label>
+        <input asp-for="Version" class="form-control" placeholder="1.0" />
+        <span asp-validation-for="Version" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="FinishedGoodItemId" class="form-label required"></label>
+        <select asp-for="FinishedGoodItemId" class="form-select">
+            <option value="0">— Chọn thành phẩm —</option>
+            @foreach (var option in Model.ProductOptions)
+            {
+                <option value="@option.Value" selected="@(option.Value == Model.FinishedGoodItemId.ToString() ? "selected" : null)">@option.Text</option>
+            }
+        </select>
+        <span asp-validation-for="FinishedGoodItemId" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+        <div class="form-check form-switch mb-2">
+            <input asp-for="IsActive" class="form-check-input" role="switch" />
+            <label asp-for="IsActive" class="form-check-label"></label>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Note" class="form-label"></label>
+        <input asp-for="Note" class="form-control" placeholder="Ghi chú định mức" />
+        <span asp-validation-for="Note" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="form-section mt-1" data-line-editor data-calc="bom" data-item-info-url="@Url.Action("ItemInfo", "Stock")">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <div class="form-section-title mb-0"><i class="bi bi-list-check"></i>Thành phần nguyên vật liệu</div>
+        <button type="button" class="btn btn-outline-primary btn-sm" data-line-add>
+            <i class="bi bi-plus-lg me-1"></i>Thêm nguyên vật liệu
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table-erp line-items-table">
+            <thead>
+                <tr>
+                    <th style="width:38px;">#</th>
+                    <th style="min-width:250px;">Nguyên vật liệu</th>
+                    <th class="text-end" style="width:120px;">SL / SP</th>
+                    <th class="text-end" style="width:100px;">Hao hụt %</th>
+                    <th class="text-end" style="width:120px;">SL thực tế</th>
+                    <th class="text-end" style="width:110px;">Đơn giá</th>
+                    <th class="text-end" style="width:130px;">Chi phí / SP</th>
+                    <th style="min-width:150px;">Ghi chú</th>
+                    <th style="width:44px;"></th>
+                </tr>
+            </thead>
+            <tbody data-lines>
+                @foreach (var line in Model.Lines)
+                {
+                    var selectedId = line.ComponentItemId.ToString();
+                    <tr data-line>
+                        <td class="line-index text-muted-sm">@(lineIndex + 1)</td>
+                        <td>
+                            <select name="Lines[@lineIndex].ComponentItemId" class="form-select" data-item-select>
+                                <option value="0">— Chọn NVL —</option>
+                                @foreach (var option in Model.ComponentOptions)
+                                {
+                                    <option value="@option.Value" selected="@(option.Value == selectedId ? "selected" : null)">@option.Text</option>
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <input name="Lines[@lineIndex].QuantityPerUnit" value="@line.QuantityPerUnit.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                   type="number" step="0.0001" min="0.0001" class="form-control text-end" data-qty />
+                        </td>
+                        <td>
+                            <input name="Lines[@lineIndex].ScrapPercent" value="@line.ScrapPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                   type="number" step="0.01" min="0" max="100" class="form-control text-end" data-scrap />
+                        </td>
+                        <td class="num" data-effective>—</td>
+                        <td class="num" data-unit-cost>—</td>
+                        <td class="num fw-semibold" data-amount>—</td>
+                        <td>
+                            <input name="Lines[@lineIndex].Note" value="@line.Note" class="form-control" placeholder="Ghi chú" />
+                        </td>
+                        <td class="text-end">
+                            <button type="button" class="icon-link text-danger" data-line-remove title="Xóa dòng">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    lineIndex++;
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="6" class="text-end">Tổng chi phí nguyên vật liệu / sản phẩm</td>
+                    <td class="num text-brand" data-line-total>0 đ</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <div class="form-text mt-2">
+        Số lượng thực tế = số lượng / sản phẩm × (1 + tỷ lệ hao hụt). Đơn giá lấy theo đơn giá chuẩn hiện tại của vật tư.
+    </div>
+
+    <template data-line-template>
+        <tr data-line>
+            <td class="line-index text-muted-sm"></td>
+            <td>
+                <select name="Lines[__index__].ComponentItemId" class="form-select" data-item-select>
+                    <option value="0">— Chọn NVL —</option>
+                    @foreach (var option in Model.ComponentOptions)
+                    {
+                        <option value="@option.Value">@option.Text</option>
+                    }
+                </select>
+            </td>
+            <td>
+                <input name="Lines[__index__].QuantityPerUnit" value="1" type="number" step="0.0001" min="0.0001"
+                       class="form-control text-end" data-qty />
+            </td>
+            <td>
+                <input name="Lines[__index__].ScrapPercent" value="0" type="number" step="0.01" min="0" max="100"
+                       class="form-control text-end" data-scrap />
+            </td>
+            <td class="num" data-effective>—</td>
+            <td class="num" data-unit-cost>—</td>
+            <td class="num fw-semibold" data-amount>—</td>
+            <td>
+                <input name="Lines[__index__].Note" class="form-control" placeholder="Ghi chú" />
+            </td>
+            <td class="text-end">
+                <button type="button" class="icon-link text-danger" data-line-remove title="Xóa dòng">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    </template>
+</div>

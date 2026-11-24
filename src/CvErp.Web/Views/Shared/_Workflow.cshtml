@@ -1,0 +1,46 @@
+@model DocumentStatus
+@{
+    var steps = new[] { "Nháp", "Chờ duyệt", "Đã duyệt", "Ghi sổ" };
+    var current = Model switch
+    {
+        DocumentStatus.Draft => 0,
+        DocumentStatus.Submitted => 1,
+        DocumentStatus.Approved => 2,
+        DocumentStatus.Posted => 3,
+        _ => -1
+    };
+}
+@if (Model == DocumentStatus.Cancelled)
+{
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-3" role="alert">
+        <i class="bi bi-x-octagon-fill"></i>
+        <div><strong>Chứng từ đã bị hủy.</strong> Không thể duyệt hoặc ghi sổ.</div>
+    </div>
+}
+else
+{
+    <div class="workflow" aria-label="Tiến trình chứng từ">
+        @for (var i = 0; i < steps.Length; i++)
+        {
+            var done = Model == DocumentStatus.Posted || i < current;
+            var isCurrent = i == current && Model != DocumentStatus.Posted;
+            var css = done ? "done" : isCurrent ? "current" : "";
+            <div class="workflow-step @css">
+                <div class="workflow-dot">
+                    @if (done)
+                    {
+                        <i class="bi bi-check-lg"></i>
+                    }
+                    else
+                    {
+                        <span>@(i + 1)</span>
+                    }
+                </div>
+                <div class="workflow-text">
+                    <strong>@steps[i]</strong>
+                    <small>@(done ? "Hoàn tất" : isCurrent ? "Đang xử lý" : "Chưa thực hiện")</small>
+                </div>
+            </div>
+        }
+    </div>
+}

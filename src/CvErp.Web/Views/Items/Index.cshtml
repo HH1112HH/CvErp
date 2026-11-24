@@ -1,0 +1,131 @@
+@model ItemListViewModel
+@{
+    ViewData["Title"] = "Vật tư & thành phẩm";
+    ViewData["Subtitle"] = "Danh mục nguyên vật liệu, phụ kiện và thành phẩm dùng trong kho và định mức BOM.";
+    var canEdit = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Manager);
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Danh mục vật tư</h2>
+        <p class="page-subtitle">@Model.Items.TotalCount mã hàng · đơn vị tính, tồn tối thiểu và đơn giá chuẩn</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-outline-primary" asp-controller="Stock" asp-action="Index">
+            <i class="bi bi-boxes me-1"></i>Xem tồn kho
+        </a>
+        @if (canEdit)
+        {
+            <a class="btn btn-primary" asp-action="Create">
+                <i class="bi bi-plus-lg me-1"></i>Thêm vật tư
+            </a>
+        }
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-4">
+            <label class="form-label" for="search">Tìm kiếm</label>
+            <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="Mã hoặc tên vật tư..." />
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="type">Loại</label>
+            <select id="type" name="type" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="RawMaterial" selected="@(Model.Type == ItemType.RawMaterial)">Nguyên vật liệu</option>
+                <option value="FinishedGood" selected="@(Model.Type == ItemType.FinishedGood)">Thành phẩm</option>
+            </select>
+        </div>
+        <div class="span-3">
+            <label class="form-label" for="category">Nhóm</label>
+            <select id="category" name="category" class="form-select">
+                <option value="">Tất cả nhóm</option>
+                @foreach (var category in Model.Categories)
+                {
+                    <option value="@category" selected="@(Model.Category == category)">@category</option>
+                }
+            </select>
+        </div>
+        <div class="span-3 d-flex align-items-end gap-2">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Lọc</button>
+            <a class="btn btn-light" asp-action="Index">Xóa lọc</a>
+        </div>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Tên vật tư</th>
+                    <th>Nhóm</th>
+                    <th>ĐVT</th>
+                    <th>Loại</th>
+                    <th class="text-end">Tồn tối thiểu</th>
+                    <th class="text-end">Đơn giá chuẩn</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Items.Items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <i class="bi bi-box"></i>
+                                <strong>Không tìm thấy vật tư</strong>
+                                <p>Thử thay đổi bộ lọc hoặc thêm vật tư mới.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @foreach (var item in Model.Items.Items)
+                {
+                    <tr>
+                        <td class="strong-code">@item.Code</td>
+                        <td>
+                            <div class="fw-semibold">@item.Name</div>
+                        </td>
+                        <td class="text-muted-sm">@item.Category</td>
+                        <td>@item.Unit</td>
+                        <td>
+                            <span class="badge @(item.Type == ItemType.RawMaterial ? "text-bg-info" : "text-bg-primary")">
+                                @UiText.ItemTypeLabel(item.Type)
+                            </span>
+                        </td>
+                        <td class="num">@UiText.Qty(item.MinStock)</td>
+                        <td class="num">@UiText.Money(item.StandardCost)</td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <span class="badge text-bg-success">Đang dùng</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">Ngừng dùng</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <a class="icon-link" title="Thẻ kho" asp-controller="Stock" asp-action="Card" asp-route-itemId="@item.Id">
+                                    <i class="bi bi-card-list"></i>
+                                </a>
+                                @if (canEdit)
+                                {
+                                    <a class="icon-link" title="Sửa" asp-action="Edit" asp-route-id="@item.Id">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="Model.Items" />
+</div>

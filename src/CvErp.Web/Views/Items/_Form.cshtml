@@ -1,0 +1,52 @@
+@model ItemEditViewModel
+<div class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="Code" class="form-label required"></label>
+        <input asp-for="Code" class="form-control text-uppercase" placeholder="VD: MDF-17" />
+        <span asp-validation-for="Code" class="text-danger small"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="Name" class="form-label required"></label>
+        <input asp-for="Name" class="form-control" placeholder="Tên vật tư hoặc thành phẩm" />
+        <span asp-validation-for="Name" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Type" class="form-label"></label>
+        <select asp-for="Type" class="form-select">
+            <option value="RawMaterial">Nguyên vật liệu</option>
+            <option value="FinishedGood">Thành phẩm</option>
+        </select>
+        <div class="form-text">Thành phẩm dùng cho lệnh sản xuất và BOM.</div>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Unit" class="form-label required"></label>
+        <input asp-for="Unit" class="form-control" placeholder="tấm, kg, cái, m..." />
+        <span asp-validation-for="Unit" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Category" class="form-label"></label>
+        <input asp-for="Category" class="form-control" placeholder="Gỗ tấm, Phụ kiện..." />
+        <span asp-validation-for="Category" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="MinStock" class="form-label"></label>
+        <input asp-for="MinStock" type="number" step="0.0001" min="0" class="form-control" />
+        <div class="form-text">Ngưỡng cảnh báo tồn thấp trên toàn hệ thống.</div>
+        <span asp-validation-for="MinStock" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="StandardCost" class="form-label"></label>
+        <div class="input-group">
+            <input asp-for="StandardCost" type="number" step="0.01" min="0" class="form-control" />
+            <span class="input-group-text">đ</span>
+        </div>
+        <div class="form-text">Dùng làm đơn giá mặc định khi nhập/xuất kho.</div>
+        <span asp-validation-for="StandardCost" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <div class="form-check form-switch mb-2">
+            <input asp-for="IsActive" class="form-check-input" role="switch" />
+            <label asp-for="IsActive" class="form-check-label"></label>
+        </div>
+    </div>
+</div>

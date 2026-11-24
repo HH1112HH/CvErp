@@ -1,0 +1,170 @@
+table vw_ProductionPerformance
+	lineageTag: 0da21c6e-282e-5901-b863-bc6f91793ca8
+
+	column ProductionOrderId
+		dataType: int64
+		isHidden
+		lineageTag: c1c10f91-0c45-5c19-98f3-c955071ca0e1
+		summarizeBy: none
+		sourceColumn: ProductionOrderId
+
+	column OrderNo
+		dataType: string
+		lineageTag: 218a5fa0-747b-5dfb-9e7b-060625e5b8f1
+		summarizeBy: none
+		sourceColumn: OrderNo
+
+	column StatusCode
+		dataType: int64
+		lineageTag: 412adcf6-f7e2-54ff-90c7-d042fa9c5c57
+		summarizeBy: sum
+		sourceColumn: StatusCode
+
+	column StatusName
+		dataType: string
+		lineageTag: b79b848c-cb78-5262-ab93-23d4ab56205a
+		summarizeBy: none
+		sourceColumn: StatusName
+
+	column ProductItemId
+		dataType: int64
+		isHidden
+		lineageTag: 1f7f8c20-5188-5cb3-b338-218149790a3d
+		summarizeBy: none
+		sourceColumn: ProductItemId
+
+	column ProductCode
+		dataType: string
+		lineageTag: 4f316361-3b4a-542b-8e33-9c96308e51fe
+		summarizeBy: none
+		sourceColumn: ProductCode
+
+	column ProductName
+		dataType: string
+		lineageTag: 495dedda-3236-5c93-85b5-df84386bcb5e
+		summarizeBy: none
+		sourceColumn: ProductName
+
+	column Unit
+		dataType: string
+		lineageTag: 04e5cde6-2379-5d74-aa89-8c38d09aa2f1
+		summarizeBy: none
+		sourceColumn: Unit
+
+	column Category
+		dataType: string
+		lineageTag: d3c43c78-c398-5a6d-9bc1-ce1a2cf21f15
+		summarizeBy: none
+		sourceColumn: Category
+
+	column BomCode
+		dataType: string
+		lineageTag: a14da9ba-ca2b-5423-96bd-fccfdc5d15a5
+		summarizeBy: none
+		sourceColumn: BomCode
+
+	column BomVersion
+		dataType: string
+		lineageTag: 11a53d64-8eb8-5a9f-9f15-a1286e4b43a3
+		summarizeBy: none
+		sourceColumn: BomVersion
+
+	column PlannedQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: ea65c8ac-cf1e-5252-b63b-70111bfda830
+		summarizeBy: sum
+		sourceColumn: PlannedQuantity
+
+	column ActualQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: ba96db75-de75-55be-92f6-89eedf870762
+		summarizeBy: sum
+		sourceColumn: ActualQuantity
+
+	column DefectQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: 463191bf-8467-5a6e-9fa5-3e7a93b09c3e
+		summarizeBy: sum
+		sourceColumn: DefectQuantity
+
+	column CompletionRatePct
+		dataType: double
+		formatString: 0.00
+		lineageTag: 61aea423-5c1e-54ef-8ab7-0f6a4cc91e3c
+		summarizeBy: none
+		sourceColumn: CompletionRatePct
+
+	column DefectRatePct
+		dataType: double
+		formatString: 0.00
+		lineageTag: ad939a45-d8fe-57ce-ab04-b9f05b7912ee
+		summarizeBy: none
+		sourceColumn: DefectRatePct
+
+	column StandardMaterialCost
+		dataType: double
+		formatString: #,##0
+		lineageTag: 1851215e-8333-5fde-9db5-5d5aad694814
+		summarizeBy: none
+		sourceColumn: StandardMaterialCost
+
+	column ActualMaterialCost
+		dataType: double
+		formatString: #,##0
+		lineageTag: c94c4c7d-9c8b-5188-bb69-72682d68bb99
+		summarizeBy: none
+		sourceColumn: ActualMaterialCost
+
+	column MaterialCostVarianceAmount
+		dataType: double
+		formatString: #,##0
+		lineageTag: bc4c0a06-6742-5654-803b-2c8078a5439b
+		summarizeBy: none
+		sourceColumn: MaterialCostVarianceAmount
+
+	column MaterialCostVariancePct
+		dataType: double
+		formatString: 0.00
+		lineageTag: 9ba9b583-5940-5dde-bbb1-bb5f9d170fd2
+		summarizeBy: none
+		sourceColumn: MaterialCostVariancePct
+
+	column StartDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: c22d6d09-3f80-501f-b63b-8dd3e3435135
+		summarizeBy: none
+		sourceColumn: StartDate
+
+	column DueDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: edcca7c5-df40-5ee5-a0a9-92cd7af8de6f
+		summarizeBy: none
+		sourceColumn: DueDate
+
+	column DueMonth
+		dataType: string
+		lineageTag: fb84d5f9-7e15-5abd-ba00-8223ce495581
+		summarizeBy: none
+		sourceColumn: DueMonth
+
+	column CompletedAt
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 7eea8aa2-7c17-5a44-8503-58b146b3bcca
+		summarizeBy: none
+		sourceColumn: CompletedAt
+
+	partition vw_ProductionPerformance = m
+		mode: import
+		source =
+				let
+					Source = Sql.Database("localhost\SQLEXPRESS", "CvErp"),
+					Data = Source{[Schema="dbo",Item="vw_ProductionPerformance"]}[Data]
+				in
+					Data
+

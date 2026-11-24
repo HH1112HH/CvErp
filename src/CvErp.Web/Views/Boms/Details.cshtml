@@ -1,0 +1,143 @@
+@model Bom
+@{
+    ViewData["Title"] = "Chi tiết định mức";
+    ViewData["Subtitle"] = $"BOM {Model.Code} · phiên bản {Model.Version}";
+    var canEdit = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Manager);
+    var canProduce = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Production);
+    var totalCost = Model.Lines.Sum(x => x.QuantityPerUnit * (1 + x.ScrapPercent / 100m) * (x.ComponentItem?.StandardCost ?? 0));
+    var orderCount = ViewData["ProductionOrderCount"] as int? ?? 0;
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">@Model.Name</h2>
+        <p class="page-subtitle">
+            Thành phẩm <strong>@Model.FinishedGoodItem?.Code · @Model.FinishedGoodItem?.Name</strong>
+            · @Model.Lines.Count nguyên vật liệu
+        </p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-light" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Danh sách</a>
+        @if (canProduce)
+        {
+            <a class="btn btn-outline-primary" asp-controller="ProductionOrders" asp-action="Create">
+                <i class="bi bi-clipboard-plus me-1"></i>Tạo lệnh sản xuất
+            </a>
+        }
+        @if (canEdit)
+        {
+            <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id"><i class="bi bi-pencil me-1"></i>Sửa BOM</a>
+        }
+    </div>
+</div>
+
+<div class="doc-hero">
+    <div>
+        <div class="doc-number">@Model.Code <span class="badge text-bg-light align-middle">v@(Model.Version)</span></div>
+        <div class="doc-meta">@Model.Name · tạo ngày @UiText.DateLocal(Model.CreatedAt)</div>
+        <div class="mt-2">
+            @if (Model.IsActive)
+            {
+                <span class="badge text-bg-success">Đang áp dụng</span>
+            }
+            else
+            {
+                <span class="badge text-bg-secondary">Ngừng áp dụng</span>
+            }
+            <span class="badge text-bg-light">@orderCount lệnh sản xuất đã dùng</span>
+        </div>
+    </div>
+    <div class="text-end">
+        <div class="text-muted-sm">Chi phí NVL định mức / sản phẩm</div>
+        <div class="doc-amount">@UiText.Money(totalCost) <small class="fs-6 text-muted">đ</small></div>
+        <div class="text-muted-sm">Theo đơn giá chuẩn hiện tại</div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-9">
+        <div class="card">
+            <div class="card-header">Thành phần định mức</div>
+            <div class="table-responsive">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Mã NVL</th>
+                            <th>Tên nguyên vật liệu</th>
+                            <th>ĐVT</th>
+                            <th class="text-end">SL / SP</th>
+                            <th class="text-end">Hao hụt</th>
+                            <th class="text-end">SL thực tế</th>
+                            <th class="text-end">Đơn giá</th>
+                            <th class="text-end">Chi phí / SP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Lines.Count == 0)
+                        {
+                            <tr><td colspan="9"><div class="empty-state py-4"><i class="bi bi-diagram-3"></i><strong>BOM chưa có nguyên vật liệu</strong></div></td></tr>
+                        }
+                        @{ var index = 0; }
+                        @foreach (var line in Model.Lines.OrderBy(x => x.ComponentItem?.Code))
+                        {
+                            index++;
+                            var effective = line.QuantityPerUnit * (1 + line.ScrapPercent / 100m);
+                            var amount = effective * (line.ComponentItem?.StandardCost ?? 0);
+                            <tr>
+                                <td class="text-muted-sm">@index</td>
+                                <td class="strong-code">@line.ComponentItem?.Code</td>
+                                <td class="fw-semibold">@line.ComponentItem?.Name</td>
+                                <td>@line.ComponentItem?.Unit</td>
+                                <td class="num">@UiText.Qty(line.QuantityPerUnit)</td>
+                                <td class="num">@UiText.Percent(line.ScrapPercent)</td>
+                                <td class="num">@UiText.Qty(effective)</td>
+                                <td class="num">@UiText.Money(line.ComponentItem?.StandardCost ?? 0)</td>
+                                <td class="num fw-semibold">@UiText.Money(amount)</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="8" class="text-end fw-semibold">Tổng chi phí nguyên vật liệu / sản phẩm</td>
+                            <td class="num fw-bold text-brand">@UiText.Money(totalCost) đ</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3">
+        <div class="card mb-3">
+            <div class="card-header">Thông tin</div>
+            <div class="card-body">
+                <div class="detail-item mb-3">
+                    <label>Thành phẩm</label>
+                    <div>@Model.FinishedGoodItem?.Name</div>
+                    <div class="text-muted-sm">@Model.FinishedGoodItem?.Code · @Model.FinishedGoodItem?.Unit</div>
+                </div>
+                <div class="detail-item mb-3">
+                    <label>Phiên bản</label>
+                    <div>@Model.Version</div>
+                </div>
+                <div class="detail-item mb-3">
+                    <label>Số lệnh đã dùng</label>
+                    <div>@orderCount lệnh</div>
+                </div>
+                <div class="detail-item">
+                    <label>Ghi chú</label>
+                    <div class="text-muted-sm">@(string.IsNullOrWhiteSpace(Model.Note) ? "Không có ghi chú" : Model.Note)</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="form-section-title mb-2"><i class="bi bi-info-circle"></i>Nguyên tắc</div>
+                <p class="text-muted-sm mb-0">
+                    Nhu cầu nguyên vật liệu được chụp lại tại thời điểm tạo lệnh sản xuất. Thay đổi BOM sau đó
+                    không làm thay đổi lệnh đã tạo.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

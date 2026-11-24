@@ -1,0 +1,308 @@
+@model OverallDashboardViewModel
+@{
+    ViewData["Title"] = "Tổng quan điều hành";
+    ViewData["Subtitle"] = "Sức khỏe tồn kho, tiến độ sản xuất và chênh lệch chi phí trong một màn hình.";
+    var canViewVariance = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Manager);
+    var canStock = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Warehouse);
+    var canProduce = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Production);
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Trung tâm điều hành</h2>
+        <p class="page-subtitle">Cập nhật từ sổ cái kho và lệnh sản xuất · @UiText.Date(Model.From) – @UiText.Date(Model.To)</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-outline-primary" asp-controller="Dashboard" asp-action="Inventory">
+            <i class="bi bi-boxes me-1"></i>Dashboard kho
+        </a>
+        <a class="btn btn-outline-primary" asp-controller="Dashboard" asp-action="Production">
+            <i class="bi bi-clipboard-data me-1"></i>Dashboard sản xuất
+        </a>
+        @if (canViewVariance)
+        {
+            <a class="btn btn-outline-primary" asp-controller="Dashboard" asp-action="Variance">
+                <i class="bi bi-currency-exchange me-1"></i>Chênh lệch chi phí
+            </a>
+        }
+    </div>
+</div>
+
+<partial name="_DateRangeFilter" model="@(new DateRangeFilterModel { From = Model.From, To = Model.To, Action = "Index", Controller = "Dashboard", Label = "Kỳ báo cáo" })" />
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-blue"><i class="bi bi-box-seam"></i></div>
+        <div>
+            <div class="kpi-label">Giá trị tồn kho</div>
+            <div class="kpi-value">@UiText.Money(Model.Inventory.TotalStockValue)<small> đ</small></div>
+            <div class="kpi-note">@Model.Inventory.ItemCount mã hàng · @Model.Inventory.RawMaterialCount nguyên vật liệu</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-amber"><i class="bi bi-exclamation-triangle"></i></div>
+        <div>
+            <div class="kpi-label">Dưới định mức tối thiểu</div>
+            <div class="kpi-value">@Model.Inventory.LowStockCount<small> mã</small></div>
+            <div class="kpi-note">
+                @if (Model.Inventory.LowStockCount > 0)
+                {
+                    <span class="down">Cần bổ sung vật tư</span>
+                }
+                else
+                {
+                    <span class="up">Tồn kho trong ngưỡng an toàn</span>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-teal"><i class="bi bi-gear-wide-connected"></i></div>
+        <div>
+            <div class="kpi-label">Tỷ lệ hoàn thành sản xuất</div>
+            <div class="kpi-value">@UiText.Percent(Model.Production.CompletionRate)</div>
+            <div class="kpi-note">@UiText.Qty(Model.Production.ActualInPeriod) / @UiText.Qty(Model.Production.PlannedInPeriod) sản phẩm</div>
+        </div>
+    </div>
+    @if (canViewVariance)
+    {
+        <div class="kpi-card">
+            <div class="kpi-icon @(Model.Variance.Variance > 0 ? "bg-soft-red" : "bg-soft-teal")">
+                <i class="bi bi-cash-coin"></i>
+            </div>
+            <div>
+                <div class="kpi-label">Chênh lệch chi phí NVL</div>
+                <div class="kpi-value">@UiText.Money(Model.Variance.Variance)<small> đ</small></div>
+                <div class="kpi-note">
+                    <span class="@(Model.Variance.Variance > 0 ? "down" : "up")">@UiText.Percent(Model.Variance.VariancePercent)</span>
+                    so với định mức
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-7">
+        <div class="chart-card h-100">
+            <div class="d-flex align-items-start justify-content-between">
+                <div>
+                    <div class="chart-title">Dòng tiền nhập – xuất kho</div>
+                    <div class="chart-sub">Giá trị nhập và xuất kho theo tháng</div>
+                </div>
+                <span class="badge text-bg-light"><i class="bi bi-graph-up me-1"></i>6 tháng</span>
+            </div>
+            <div class="chart-box"><canvas id="stockFlowChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="chart-card h-100">
+            <div class="chart-title">Sản lượng theo tháng</div>
+            <div class="chart-sub">Kế hoạch, sản lượng tốt và sản lượng lỗi</div>
+            <div class="chart-box"><canvas id="outputChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Cảnh báo tồn kho</span>
+                <a class="text-muted-sm" asp-controller="Stock" asp-action="Index" asp-route-lowStockOnly="true">Xem tất cả</a>
+            </div>
+            <div class="card-body pt-2">
+                @if (Model.Inventory.LowStock.Count == 0)
+                {
+                    <div class="empty-state py-4">
+                        <i class="bi bi-shield-check"></i>
+                        <strong>Không có vật tư dưới định mức</strong>
+                        <p>Tất cả vật tư đang ở mức tồn an toàn.</p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="list-clean">
+                        @foreach (var row in Model.Inventory.LowStock.Take(6))
+                        {
+                            <li>
+                                <div class="min-w-0">
+                                    <div class="name text-truncate">@row.Name</div>
+                                    <div class="text-muted-sm"><span class="strong-code">@row.Code</span> · còn @UiText.Qty(row.OnHand) @row.Unit</div>
+                                </div>
+                                <span class="badge rounded-pill text-bg-warning nowrap">thiếu @UiText.Qty(row.Shortage)</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Lệnh sản xuất sắp đến hạn</span>
+                <a class="text-muted-sm" asp-controller="ProductionOrders" asp-action="Index">Tất cả lệnh</a>
+            </div>
+            <div class="table-responsive">
+                @if (Model.Production.UpcomingOrders.Count == 0)
+                {
+                    <div class="empty-state py-4">
+                        <i class="bi bi-clipboard-check"></i>
+                        <strong>Không có lệnh sắp đến hạn</strong>
+                        <p>Các lệnh đang chạy đều trong kế hoạch.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="table-erp">
+                        <thead>
+                            <tr>
+                                <th>Lệnh / Thành phẩm</th>
+                                <th class="text-end">Kế hoạch</th>
+                                <th>Hạn hoàn thành</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.Production.UpcomingOrders.Take(6))
+                            {
+                                <tr>
+                                    <td>
+                                        <a class="strong-code" asp-controller="ProductionOrders" asp-action="Details" asp-route-id="@order.Id">@order.OrderNo</a>
+                                        <div class="text-muted-sm">@order.ProductName</div>
+                                    </td>
+                                    <td class="num">@UiText.Qty(order.PlannedQuantity)</td>
+                                    <td class="nowrap">@UiText.Date(order.DueDate)</td>
+                                    <td>@Html.Raw(UiText.Badge(UiText.ProductionStatusLabel(order.Status), UiText.ProductionStatusCss(order.Status)))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Giao dịch kho gần nhất</span>
+                <a class="text-muted-sm" asp-controller="Stock" asp-action="Index">Xem tồn kho</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Chứng từ</th>
+                            <th>Vật tư</th>
+                            <th>Kho</th>
+                            <th class="text-end">Số lượng</th>
+                            <th class="text-end">Giá trị</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var transaction in Model.Inventory.RecentTransactions.Take(8))
+                        {
+                            <tr>
+                                <td class="nowrap">@UiText.Date(transaction.Date)</td>
+                                <td class="strong-code">@transaction.ReferenceNo</td>
+                                <td>@transaction.ItemName</td>
+                                <td class="text-muted-sm">@transaction.WarehouseName</td>
+                                <td class="num @(transaction.Quantity < 0 ? "stock-zero" : "stock-positive")">
+                                    @(transaction.Quantity > 0 ? "+" : "")@UiText.Qty(transaction.Quantity)
+                                </td>
+                                <td class="num">@UiText.Money(transaction.Amount)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card h-100">
+            <div class="card-header">Thao tác nhanh</div>
+            <div class="card-body d-grid gap-2">
+                @if (canStock || User.IsInRole(AppRoles.Purchasing))
+                {
+                    <a class="btn btn-light text-start" asp-controller="StockDocuments" asp-action="Create" asp-route-type="@StockDocumentType.Receipt">
+                        <i class="bi bi-box-arrow-in-down me-2 text-brand"></i>Lập phiếu nhập kho
+                    </a>
+                    <a class="btn btn-light text-start" asp-controller="StockDocuments" asp-action="Create" asp-route-type="@StockDocumentType.Issue">
+                        <i class="bi bi-box-arrow-up me-2 text-brand"></i>Lập phiếu xuất kho
+                    </a>
+                }
+                @if (canProduce)
+                {
+                    <a class="btn btn-light text-start" asp-controller="ProductionOrders" asp-action="Create">
+                        <i class="bi bi-clipboard-plus me-2 text-brand"></i>Tạo lệnh sản xuất
+                    </a>
+                }
+                @if (canViewVariance)
+                {
+                    <a class="btn btn-light text-start" asp-controller="Reports" asp-action="Variance">
+                        <i class="bi bi-file-earmark-bar-graph me-2 text-brand"></i>Báo cáo chênh lệch
+                    </a>
+                }
+                <div class="divider"></div>
+                <div class="text-muted-sm">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Mọi giao dịch kho đều được ghi vào sổ cái và có thể truy xuất theo thẻ kho.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            if (!window.Chart) return;
+
+            const flow = @Html.Raw(JsonSerializer.Serialize(new
+            {
+                labels = Model.Inventory.StockFlow.Select(x => x.Month).ToList(),
+                receipt = Model.Inventory.StockFlow.Select(x => x.ReceiptValue).ToList(),
+                issue = Model.Inventory.StockFlow.Select(x => x.IssueValue).ToList()
+            }));
+
+            new Chart(document.getElementById('stockFlowChart'), {
+                type: 'bar',
+                data: {
+                    labels: flow.labels,
+                    datasets: [
+                        { label: 'Nhập kho', data: flow.receipt, backgroundColor: '#178a74', borderRadius: 6, maxBarThickness: 26 },
+                        { label: 'Xuất kho', data: flow.issue, backgroundColor: '#d99a3e', borderRadius: 6, maxBarThickness: 26 }
+                    ]
+                },
+                options: erpCharts.barOptions('đ')
+            });
+
+            const output = @Html.Raw(JsonSerializer.Serialize(new
+            {
+                labels = Model.Production.OutputByMonth.Select(x => x.Month).ToList(),
+                planned = Model.Production.OutputByMonth.Select(x => x.Planned).ToList(),
+                actual = Model.Production.OutputByMonth.Select(x => x.Actual).ToList(),
+                defect = Model.Production.OutputByMonth.Select(x => x.Defect).ToList()
+            }));
+
+            new Chart(document.getElementById('outputChart'), {
+                type: 'line',
+                data: {
+                    labels: output.labels,
+                    datasets: [
+                        { label: 'Kế hoạch', data: output.planned, borderColor: '#9db4c6', backgroundColor: 'rgba(157,180,198,.12)', borderDash: [5, 4], tension: .32, pointRadius: 2, fill: false },
+                        { label: 'Tốt', data: output.actual, borderColor: '#146c8a', backgroundColor: 'rgba(20,108,138,.12)', tension: .32, pointRadius: 3, fill: true },
+                        { label: 'Lỗi', data: output.defect, borderColor: '#c0392b', backgroundColor: 'rgba(192,57,43,.1)', tension: .32, pointRadius: 2, fill: false }
+                    ]
+                },
+                options: erpCharts.lineOptions('')
+            });
+        })();
+    </script>
+}

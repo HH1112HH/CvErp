@@ -1,0 +1,173 @@
+@model StockBalanceViewModel
+@{
+    ViewData["Title"] = "Tồn kho";
+    ViewData["Subtitle"] = "Số dư tồn kho theo vật tư và kho, tính trực tiếp từ sổ cái giao dịch.";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Bảng tồn kho</h2>
+        <p class="page-subtitle">@Model.ItemCount mã vật tư · @Model.LowStockCount mã dưới định mức tối thiểu</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-outline-primary" asp-controller="Reports" asp-action="StockSummary">
+            <i class="bi bi-file-earmark-bar-graph me-1"></i>Tổng hợp tồn
+        </a>
+        <a class="btn btn-outline-primary" asp-controller="Reports" asp-action="LowStock">
+            <i class="bi bi-exclamation-triangle me-1"></i>Vật tư dưới định mức
+        </a>
+    </div>
+</div>
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-blue"><i class="bi bi-boxes"></i></div>
+        <div>
+            <div class="kpi-label">Tổng giá trị tồn (theo bộ lọc)</div>
+            <div class="kpi-value">@UiText.Money(Model.TotalValue)<small> đ</small></div>
+            <div class="kpi-note">Nguồn: sổ cái kho</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-teal"><i class="bi bi-upc-scan"></i></div>
+        <div>
+            <div class="kpi-label">Số mã vật tư</div>
+            <div class="kpi-value">@Model.ItemCount<small> mã</small></div>
+            <div class="kpi-note">@Model.Rows.TotalCount dòng tồn theo kho</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-amber"><i class="bi bi-exclamation-triangle"></i></div>
+        <div>
+            <div class="kpi-label">Dưới định mức tối thiểu</div>
+            <div class="kpi-value">@Model.LowStockCount<small> mã</small></div>
+            <div class="kpi-note">
+                @if (Model.LowStockCount > 0)
+                {
+                    <a class="down" asp-action="Index" asp-route-lowStockOnly="true">Xem danh sách cần bổ sung</a>
+                }
+                else
+                {
+                    <span class="up">Tất cả trong ngưỡng an toàn</span>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-3">
+            <label class="form-label" for="search">Tìm kiếm</label>
+            <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="Mã hoặc tên vật tư..." />
+        </div>
+        <div class="span-3">
+            <label class="form-label" for="warehouseId">Kho</label>
+            <select id="warehouseId" name="warehouseId" class="form-select">
+                <option value="">Tất cả kho</option>
+                @foreach (var option in Model.WarehouseOptions)
+                {
+                    <option value="@option.Value" selected="@(option.Value == Model.WarehouseId?.ToString() ? "selected" : null)">@option.Text</option>
+                }
+            </select>
+        </div>
+        <div class="span-3">
+            <label class="form-label" for="category">Nhóm vật tư</label>
+            <select id="category" name="category" class="form-select">
+                <option value="">Tất cả nhóm</option>
+                @foreach (var category in Model.Categories)
+                {
+                    <option value="@category" selected="@(Model.Category == category ? "selected" : null)">@category</option>
+                }
+            </select>
+        </div>
+        <div class="span-3">
+            <label class="form-label d-block">Cảnh báo</label>
+            <div class="form-check form-switch pt-1">
+                <input class="form-check-input" type="checkbox" role="switch" id="lowStockOnly" name="lowStockOnly"
+                       value="true" checked="@Model.LowStockOnly" />
+                <label class="form-check-label small" for="lowStockOnly">Chỉ hiện dưới định mức</label>
+            </div>
+        </div>
+        <div class="span-12 d-flex gap-2 flex-wrap">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Lọc tồn kho</button>
+            <a class="btn btn-light" asp-action="Index">Xóa lọc</a>
+        </div>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Mã vật tư</th>
+                    <th>Tên vật tư</th>
+                    <th>Nhóm</th>
+                    <th>Kho</th>
+                    <th class="text-end">Tồn kho</th>
+                    <th class="text-end">Tồn tối thiểu</th>
+                    <th class="text-end">Đơn giá</th>
+                    <th class="text-end">Giá trị tồn</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="10">
+                            <div class="empty-state">
+                                <i class="bi bi-inbox"></i>
+                                <strong>Không có dữ liệu tồn kho</strong>
+                                <p>Thử đổi bộ lọc hoặc ghi sổ chứng từ nhập kho đầu tiên.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @foreach (var row in Model.Rows.Items)
+                {
+                    <tr>
+                        <td class="strong-code">@row.Code</td>
+                        <td>
+                            <div class="fw-semibold">@row.Name</div>
+                            <div class="text-muted-sm">@UiText.ItemTypeLabel(row.ItemType) · @row.Unit</div>
+                        </td>
+                        <td class="text-muted-sm">@row.Category</td>
+                        <td>@row.WarehouseName</td>
+                        <td class="num">
+                            <span class="@(row.Quantity <= 0 ? "stock-zero" : row.IsLowStock ? "stock-low" : "stock-positive") fw-semibold">
+                                @UiText.Qty(row.Quantity)
+                            </span>
+                        </td>
+                        <td class="num text-muted-sm">@UiText.Qty(row.MinStock)</td>
+                        <td class="num">@UiText.Money(row.UnitCost)</td>
+                        <td class="num fw-semibold">@UiText.Money(row.Value)</td>
+                        <td>
+                            @if (row.IsLowStock)
+                            {
+                                <span class="badge text-bg-warning">Dưới định mức</span>
+                            }
+                            else if (row.Quantity <= 0)
+                            {
+                                <span class="badge text-bg-secondary">Hết tồn</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-success">Đủ tồn</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <a class="icon-link" title="Thẻ kho" asp-action="Card" asp-route-itemId="@row.ItemId" asp-route-warehouseId="@row.WarehouseId">
+                                    <i class="bi bi-card-list"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="Model.Rows" />
+</div>

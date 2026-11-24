@@ -1,0 +1,100 @@
+@model BomListViewModel
+@{
+    ViewData["Title"] = "Định mức BOM";
+    ViewData["Subtitle"] = "Định mức nguyên vật liệu cho từng thành phẩm, kèm tỷ lệ hao hụt.";
+    var canEdit = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Manager);
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Định mức nguyên vật liệu</h2>
+        <p class="page-subtitle">@Model.Boms.TotalCount định mức · phiên bản hóa theo thành phẩm</p>
+    </div>
+    <div class="toolbar">
+        @if (canEdit)
+        {
+            <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg me-1"></i>Tạo BOM</a>
+        }
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-6">
+            <label class="form-label" for="search">Tìm kiếm</label>
+            <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="Mã BOM, tên hoặc thành phẩm..." />
+        </div>
+        <div class="span-3">
+            <label class="form-label" for="active">Trạng thái</label>
+            <select id="active" name="active" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="true" selected="@(Model.Active == true)">Đang áp dụng</option>
+                <option value="false" selected="@(Model.Active == false)">Ngừng áp dụng</option>
+            </select>
+        </div>
+        <div class="span-3 d-flex align-items-end gap-2">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Lọc</button>
+            <a class="btn btn-light" asp-action="Index">Xóa lọc</a>
+        </div>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Mã BOM</th>
+                    <th>Tên định mức</th>
+                    <th>Thành phẩm</th>
+                    <th>Phiên bản</th>
+                    <th class="text-end">Số NVL</th>
+                    <th class="text-end">Chi phí định mức / SP</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Boms.Items.Count == 0)
+                {
+                    <tr><td colspan="8"><div class="empty-state"><i class="bi bi-diagram-3"></i><strong>Chưa có định mức BOM</strong><p>Tạo BOM để có thể lập lệnh sản xuất.</p></div></td></tr>
+                }
+                @foreach (var bom in Model.Boms.Items)
+                {
+                    var standardCost = bom.Lines.Sum(x => x.QuantityPerUnit * (1 + x.ScrapPercent / 100m) * (x.ComponentItem?.StandardCost ?? 0));
+                    <tr>
+                        <td><a class="strong-code" asp-action="Details" asp-route-id="@bom.Id">@bom.Code</a></td>
+                        <td class="fw-semibold">@bom.Name</td>
+                        <td>
+                            @bom.FinishedGoodItem?.Name
+                            <div class="text-muted-sm">@bom.FinishedGoodItem?.Code</div>
+                        </td>
+                        <td><span class="badge text-bg-light">v@(bom.Version)</span></td>
+                        <td class="num">@bom.Lines.Count</td>
+                        <td class="num">@UiText.Money(standardCost)</td>
+                        <td>
+                            @if (bom.IsActive)
+                            {
+                                <span class="badge text-bg-success">Đang áp dụng</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">Ngừng</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <a class="icon-link" title="Chi tiết" asp-action="Details" asp-route-id="@bom.Id"><i class="bi bi-eye"></i></a>
+                                @if (canEdit)
+                                {
+                                    <a class="icon-link" title="Sửa" asp-action="Edit" asp-route-id="@bom.Id"><i class="bi bi-pencil"></i></a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="Model.Boms" />
+</div>

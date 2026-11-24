@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CvErp.Domain/CvErp.Domain.csproj" />
+    <Project Path="src/CvErp.Infrastructure/CvErp.Infrastructure.csproj" />
+    <Project Path="src/CvErp.Web/CvErp.Web.csproj" />
+  </Folder>
+</Solution>

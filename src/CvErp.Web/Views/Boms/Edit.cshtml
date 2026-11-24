@@ -1,0 +1,31 @@
+@model BomEditViewModel
+@{
+    ViewData["Title"] = "Sửa định mức BOM";
+    ViewData["Subtitle"] = $"Cập nhật định mức {Model.Code}. Thay đổi không ảnh hưởng lệnh sản xuất đã tạo.";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Sửa định mức <span class="strong-code">@Model.Code</span></h2>
+        <p class="page-subtitle">Nhu cầu vật tư của lệnh đã tạo được giữ nguyên theo ảnh chụp tại thời điểm tạo lệnh.</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-light" asp-action="Details" asp-route-id="@Model.Id"><i class="bi bi-arrow-left me-1"></i>Chi tiết</a>
+    </div>
+</div>
+
+<form method="post" asp-action="Edit" asp-route-id="@Model.Id" autocomplete="off" data-line-form>
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="All" class="alert alert-danger py-2 small validation-summary" role="alert"></div>
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-pencil-square"></i>Thông tin định mức</div>
+        <partial name="_Form" model="Model" />
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Lưu thay đổi</button>
+        <a class="btn btn-light" asp-action="Details" asp-route-id="@Model.Id">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

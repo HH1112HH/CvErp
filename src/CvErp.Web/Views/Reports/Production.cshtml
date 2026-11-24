@@ -1,0 +1,195 @@
+@model ProductionReportViewModel
+@{
+    ViewData["Title"] = "Báo cáo sản xuất";
+    ViewData["Subtitle"] = "Kế hoạch, sản lượng thực tế và chất lượng sản xuất theo kỳ.";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Báo cáo sản xuất</h2>
+        <p class="page-subtitle">Kỳ @UiText.Date(Model.From) – @UiText.Date(Model.To)</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-light" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Báo cáo</a>
+        <a class="btn btn-outline-primary" asp-action="ExportProduction"
+           asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất CSV
+        </a>
+        <button class="btn btn-outline-primary" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i>In</button>
+    </div>
+</div>
+
+<partial name="_DateRangeFilter" model="@(new DateRangeFilterModel { From = Model.From, To = Model.To, Action = "Production", Controller = "Reports", Label = "Kỳ báo cáo" })" />
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-blue"><i class="bi bi-calendar-check"></i></div>
+        <div>
+            <div class="kpi-label">Sản lượng kế hoạch</div>
+            <div class="kpi-value">@UiText.Qty(Model.Data.PlannedInPeriod)<small> SP</small></div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-teal"><i class="bi bi-box-seam"></i></div>
+        <div>
+            <div class="kpi-label">Sản lượng tốt</div>
+            <div class="kpi-value">@UiText.Qty(Model.Data.ActualInPeriod)<small> SP</small></div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-violet"><i class="bi bi-speedometer2"></i></div>
+        <div>
+            <div class="kpi-label">Tỷ lệ hoàn thành</div>
+            <div class="kpi-value">@UiText.Percent(Model.Data.CompletionRate)</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-red"><i class="bi bi-exclamation-diamond"></i></div>
+        <div>
+            <div class="kpi-label">Tỷ lệ lỗi</div>
+            <div class="kpi-value">@UiText.Percent(Model.Data.DefectRate)</div>
+            <div class="kpi-note">@UiText.Qty(Model.Data.DefectInPeriod) sản phẩm lỗi</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-8">
+        <div class="chart-card h-100">
+            <div class="chart-title">Sản lượng theo tháng</div>
+            <div class="chart-sub">Kế hoạch, sản lượng tốt và lỗi</div>
+            <div class="chart-box"><canvas id="reportOutputChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="chart-card h-100">
+            <div class="chart-title">Cơ cấu trạng thái lệnh</div>
+            <div class="chart-sub">Toàn bộ lệnh trong hệ thống</div>
+            <div class="chart-box"><canvas id="reportStatusChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-6">
+        <div class="card h-100">
+            <div class="card-header">Lệnh sắp đến hạn</div>
+            <div class="table-responsive">
+                <table class="table-erp">
+                    <thead>
+                        <tr><th>Số lệnh</th><th>Thành phẩm</th><th class="text-end">Kế hoạch</th><th>Hạn</th><th>Trạng thái</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Data.UpcomingOrders.Count == 0)
+                        {
+                            <tr><td colspan="5"><div class="empty-state py-4"><i class="bi bi-check2-circle"></i><strong>Không có lệnh sắp đến hạn</strong></div></td></tr>
+                        }
+                        @foreach (var order in Model.Data.UpcomingOrders)
+                        {
+                            <tr>
+                                <td><a class="strong-code" asp-controller="ProductionOrders" asp-action="Details" asp-route-id="@order.Id">@order.OrderNo</a></td>
+                                <td>@order.ProductName</td>
+                                <td class="num">@UiText.Qty(order.PlannedQuantity)</td>
+                                <td class="nowrap">@UiText.Date(order.DueDate)</td>
+                                <td>@Html.Raw(UiText.Badge(UiText.ProductionStatusLabel(order.Status), UiText.ProductionStatusCss(order.Status)))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card h-100">
+            <div class="card-header">Lệnh hoàn thành gần đây</div>
+            <div class="table-responsive">
+                <table class="table-erp">
+                    <thead>
+                        <tr><th>Số lệnh</th><th>Thành phẩm</th><th class="text-end">Tốt</th><th class="text-end">Lỗi</th><th>Hoàn thành</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Data.RecentOrders.Count == 0)
+                        {
+                            <tr><td colspan="5"><div class="empty-state py-4"><i class="bi bi-inbox"></i><strong>Chưa có lệnh hoàn thành</strong></div></td></tr>
+                        }
+                        @foreach (var order in Model.Data.RecentOrders)
+                        {
+                            <tr>
+                                <td><a class="strong-code" asp-controller="ProductionOrders" asp-action="Details" asp-route-id="@order.Id">@order.OrderNo</a></td>
+                                <td>@order.ProductName</td>
+                                <td class="num stock-positive">@UiText.Qty(order.ActualQuantity)</td>
+                                <td class="num @(order.DefectQuantity > 0 ? "stock-zero" : "")">@UiText.Qty(order.DefectQuantity)</td>
+                                <td class="text-muted-sm nowrap">@UiText.DateTimeLocal(order.CompletedAt)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Sản lượng theo tháng</div>
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr><th>Tháng</th><th class="text-end">Kế hoạch</th><th class="text-end">Sản lượng tốt</th><th class="text-end">Sản lượng lỗi</th><th class="text-end">Tỷ lệ hoàn thành</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var point in Model.Data.OutputByMonth)
+                {
+                    var rate = point.Planned > 0 ? point.Actual / point.Planned * 100 : 0;
+                    <tr>
+                        <td class="fw-semibold">@point.Month</td>
+                        <td class="num">@UiText.Qty(point.Planned)</td>
+                        <td class="num stock-positive">@UiText.Qty(point.Actual)</td>
+                        <td class="num @(point.Defect > 0 ? "stock-zero" : "")">@UiText.Qty(point.Defect)</td>
+                        <td class="num">@UiText.Percent(rate)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            if (!window.Chart) return;
+            const output = @Html.Raw(JsonSerializer.Serialize(new
+            {
+                labels = Model.Data.OutputByMonth.Select(x => x.Month).ToList(),
+                planned = Model.Data.OutputByMonth.Select(x => x.Planned).ToList(),
+                actual = Model.Data.OutputByMonth.Select(x => x.Actual).ToList(),
+                defect = Model.Data.OutputByMonth.Select(x => x.Defect).ToList()
+            }));
+            new Chart(document.getElementById('reportOutputChart'), {
+                type: 'bar',
+                data: {
+                    labels: output.labels,
+                    datasets: [
+                        { label: 'Kế hoạch', data: output.planned, backgroundColor: '#9db4c6', borderRadius: 6, maxBarThickness: 26 },
+                        { label: 'Tốt', data: output.actual, backgroundColor: '#178a74', borderRadius: 6, maxBarThickness: 26 },
+                        { label: 'Lỗi', data: output.defect, backgroundColor: '#c0392b', borderRadius: 6, maxBarThickness: 26 }
+                    ]
+                },
+                options: erpCharts.barOptions('')
+            });
+
+            const statuses = @Html.Raw(JsonSerializer.Serialize(new
+            {
+                labels = Model.Data.StatusCounts.Select(x => UiText.ProductionStatusLabel(x.Status)).ToList(),
+                values = Model.Data.StatusCounts.Select(x => x.Count).ToList()
+            }));
+            new Chart(document.getElementById('reportStatusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: statuses.labels,
+                    datasets: [{ data: statuses.values, backgroundColor: erpCharts.palette, borderWidth: 2, borderColor: '#fff' }]
+                },
+                options: erpCharts.doughnutOptions('')
+            });
+        })();
+    </script>
+}

@@ -1,0 +1,50 @@
+table DimProduct
+	lineageTag: b7fc40b5-417c-5adf-b2a9-82ab08cd0909
+
+	column ItemId
+		dataType: int64
+		isHidden
+		lineageTag: 982bd632-c8bb-5a3c-a39b-7fad5bedc693
+		summarizeBy: none
+		sourceColumn: ItemId
+
+	column ItemCode
+		dataType: string
+		lineageTag: f1c57828-3524-562b-be4b-88fbe94d3fc1
+		summarizeBy: none
+		sourceColumn: ItemCode
+
+	column ItemName
+		dataType: string
+		lineageTag: d580ec69-4493-51a0-840d-33b35ed549ba
+		summarizeBy: none
+		sourceColumn: ItemName
+
+	column Category
+		dataType: string
+		lineageTag: 8e86c9f3-aacb-52e8-81df-7a83fe12e36e
+		summarizeBy: none
+		sourceColumn: Category
+
+	column ItemTypeName
+		dataType: string
+		lineageTag: 147a3661-1ec8-5ad2-b66b-b26bf965bc86
+		summarizeBy: none
+		sourceColumn: ItemTypeName
+
+	column Unit
+		dataType: string
+		lineageTag: 91d96397-8213-5729-be98-1ca7f823a71b
+		summarizeBy: none
+		sourceColumn: Unit
+
+	partition DimProduct = m
+		mode: import
+		source =
+				let
+					Source = Sql.Database("localhost\SQLEXPRESS", "CvErp"),
+					Data = Source{[Schema="dbo",Item="vw_InventoryOnHand"]}[Data],
+					Dim = Table.Distinct(Table.SelectColumns(Data, { "ItemId", "ItemCode", "ItemName", "Category", "ItemTypeName", "Unit" }))
+				in
+					Dim
+

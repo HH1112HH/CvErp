@@ -1,0 +1,121 @@
+@model MaterialIssueListViewModel
+@{
+    ViewData["Title"] = "Cấp phát vật tư";
+    ViewData["Subtitle"] = "Phiếu cấp phát nguyên vật liệu cho lệnh sản xuất, kiểm soát tồn kho và vượt định mức.";
+    var canCreate = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Production);
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Phiếu cấp phát vật tư</h2>
+        <p class="page-subtitle">@Model.Issues.TotalCount phiếu · cấp phát theo nhu cầu đã chốt của lệnh sản xuất</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-outline-primary" asp-action="Export"
+           asp-route-status="@Model.Status" asp-route-search="@Model.Search"
+           asp-route-from="@Model.From?.ToString("yyyy-MM-dd")" asp-route-to="@Model.To?.ToString("yyyy-MM-dd")">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất CSV
+        </a>
+        @if (canCreate)
+        {
+            <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg me-1"></i>Tạo phiếu cấp phát</a>
+        }
+    </div>
+</div>
+
+@if (Model.ProductionOrderId is not null)
+{
+    <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><i class="bi bi-funnel me-1"></i>Đang lọc theo lệnh sản xuất #@Model.ProductionOrderId</span>
+        <a class="btn btn-sm btn-light" asp-action="Index">Bỏ lọc lệnh</a>
+    </div>
+}
+
+<form method="get" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-4">
+            <label class="form-label" for="search">Tìm kiếm</label>
+            <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="Số phiếu hoặc số lệnh sản xuất..." />
+        </div>
+        <div class="span-3">
+            <label class="form-label" for="status">Trạng thái</label>
+            <select id="status" name="status" class="form-select">
+                <option value="">Tất cả</option>
+                @foreach (var status in Enum.GetValues<DocumentStatus>())
+                {
+                    <option value="@status" selected="@(Model.Status == status ? "selected" : null)">@UiText.StatusLabel(status)</option>
+                }
+            </select>
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="from">Từ ngày</label>
+            <input id="from" type="date" name="from" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="to">Đến ngày</label>
+            <input id="to" type="date" name="to" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="span-1 d-flex align-items-end">
+            <button class="btn btn-primary w-100" type="submit" title="Lọc"><i class="bi bi-search"></i></button>
+        </div>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Số phiếu</th>
+                    <th>Ngày</th>
+                    <th>Lệnh sản xuất</th>
+                    <th>Thành phẩm</th>
+                    <th>Kho xuất</th>
+                    <th class="text-end">Giá trị</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Issues.Items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <i class="bi bi-arrow-down-square"></i>
+                                <strong>Không tìm thấy phiếu cấp phát</strong>
+                                <p>Phiếu cấp phát được tạo từ lệnh sản xuất đã duyệt.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @foreach (var issue in Model.Issues.Items)
+                {
+                    <tr>
+                        <td><a class="strong-code" asp-action="Details" asp-route-id="@issue.Id">@issue.IssueNo</a></td>
+                        <td class="nowrap">@UiText.Date(issue.IssueDate)</td>
+                        <td>
+                            @if (issue.ProductionOrder is not null)
+                            {
+                                <a class="strong-code" asp-controller="ProductionOrders" asp-action="Details" asp-route-id="@issue.ProductionOrderId">@issue.ProductionOrder.OrderNo</a>
+                            }
+                        </td>
+                        <td>@issue.ProductionOrder?.FinishedGoodItem?.Name</td>
+                        <td>@issue.Warehouse?.Name</td>
+                        <td class="num fw-semibold">@UiText.Money(issue.TotalAmount)</td>
+                        <td>@Html.Raw(UiText.Badge(UiText.StatusLabel(issue.Status), UiText.StatusCss(issue.Status)))</td>
+                        <td>
+                            <div class="table-actions">
+                                <a class="icon-link" title="Chi tiết" asp-action="Details" asp-route-id="@issue.Id"><i class="bi bi-eye"></i></a>
+                                @if (issue.Status == DocumentStatus.Draft && canCreate)
+                                {
+                                    <a class="icon-link" title="Sửa" asp-action="Edit" asp-route-id="@issue.Id"><i class="bi bi-pencil"></i></a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="Model.Issues" />
+</div>

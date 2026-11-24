@@ -1,0 +1,194 @@
+table _Measures
+	lineageTag: 96d47863-78f0-594a-8bd4-110002cd6513
+
+	/// Tổng sản lượng sợi đạt chất lượng (kg)
+	measure 'Tổng sản lượng tốt' = SUM ( vw_OutputMonthly[GoodQuantity] )
+		formatString: #,##0
+		displayFolder: 1. Sản xuất
+		lineageTag: 15dab7a1-82f2-52ee-86ea-f667c816104e
+
+	/// Tổng sản lượng sợi lỗi (kg)
+	measure 'Tổng sản lượng lỗi' = SUM ( vw_OutputMonthly[DefectQuantity] )
+		formatString: #,##0
+		displayFolder: 1. Sản xuất
+		lineageTag: 038b1df0-2c95-55fd-abbc-16ffb379b392
+
+	/// Tổng sản lượng tốt quy đổi tấn
+	measure 'Tổng sản lượng (tấn)' = DIVIDE ( [Tổng sản lượng tốt], 1000 )
+		formatString: #,##0.0
+		displayFolder: 1. Sản xuất
+		lineageTag: 804f2b22-c886-535c-b69f-da8077b8e17b
+
+	/// Tỷ lệ sợi lỗi trên tổng sản lượng
+	measure 'Tỷ lệ lỗi %' = DIVIDE ( [Tổng sản lượng lỗi], [Tổng sản lượng tốt] + [Tổng sản lượng lỗi] )
+		formatString: 0.00%
+		displayFolder: 1. Sản xuất
+		lineageTag: f47abea1-66fc-539e-8f4c-56649705d6b6
+
+	/// Tổng sản lượng theo kế hoạch (kg)
+	measure 'Sản lượng kế hoạch' = SUM ( vw_ProductionPerformance[PlannedQuantity] )
+		formatString: #,##0
+		displayFolder: 1. Sản xuất
+		lineageTag: b75b4c54-5ccb-5752-9a7b-21b75a3ff780
+
+	/// Tổng sản lượng thực tế (kg)
+	measure 'Sản lượng thực tế' = SUM ( vw_ProductionPerformance[ActualQuantity] )
+		formatString: #,##0
+		displayFolder: 1. Sản xuất
+		lineageTag: abb98bc1-dfb4-5f02-995c-6a1db1b60f7a
+
+	/// Sản lượng kế hoạch quy đổi tấn
+	measure 'Sản lượng kế hoạch (tấn)' = DIVIDE ( [Sản lượng kế hoạch], 1000 )
+		formatString: #,##0.0
+		displayFolder: 1. Sản xuất
+		lineageTag: 5eafd6ce-7d5c-5c02-a72b-36e5549aa468
+
+	/// Sản lượng thực tế quy đổi tấn
+	measure 'Sản lượng thực tế (tấn)' = DIVIDE ( [Sản lượng thực tế], 1000 )
+		formatString: #,##0.0
+		displayFolder: 1. Sản xuất
+		lineageTag: 231eb57b-9a75-5a6d-b4af-48b0640b205a
+
+	/// Mức độ hoàn thành kế hoạch sản xuất
+	measure 'Tỷ lệ hoàn thành lệnh %' = DIVIDE ( [Sản lượng thực tế], [Sản lượng kế hoạch] )
+		formatString: 0.00%
+		displayFolder: 1. Sản xuất
+		lineageTag: e9220e3d-427f-5dcc-8ee8-7d81e33e1f59
+
+	/// Số lệnh đang trong quá trình sản xuất
+	measure 'Số lệnh đang sản xuất' = CALCULATE ( COUNTROWS ( vw_ProductionOrderProgress ), vw_ProductionOrderProgress[StatusCode] = 3 )
+		formatString: #,##0
+		displayFolder: 1. Sản xuất
+		lineageTag: d6e16603-29bc-5252-9d02-c46b35c4354f
+
+	/// Số lệnh đã hoàn thành
+	measure 'Số lệnh hoàn thành' = CALCULATE ( COUNTROWS ( vw_ProductionOrderProgress ), vw_ProductionOrderProgress[StatusCode] = 4 )
+		formatString: #,##0
+		displayFolder: 1. Sản xuất
+		lineageTag: 4ea6a95f-e37c-5c03-bb26-da531a2e9926
+
+	/// Số lệnh quá hạn hoàn thành
+	measure 'Số lệnh trễ hạn' = CALCULATE ( COUNTROWS ( vw_ProductionOrderProgress ), vw_ProductionOrderProgress[IsOverdue] = 1 )
+		formatString: #,##0
+		displayFolder: 1. Sản xuất
+		lineageTag: 81e434ec-4b0e-58f2-ae04-c6f1b6c3b009
+
+	/// Số ngày trễ hạn trung bình của các lệnh quá hạn
+	measure 'Số ngày trễ TB' = AVERAGEX ( FILTER ( vw_ProductionOrderProgress, vw_ProductionOrderProgress[IsOverdue] = 1 ), vw_ProductionOrderProgress[DaysPastDue] )
+		formatString: #,##0.0
+		displayFolder: 1. Sản xuất
+		lineageTag: a37d7238-e3af-5223-9e01-5d60e5aa7455
+
+	/// Sản lượng tốt của tháng có dữ liệu mới nhất
+	measure 'Sản lượng tháng gần nhất (tấn)' = VAR LastMonth = MAX ( vw_OutputMonthly[PeriodStart] ) RETURN CALCULATE ( [Tổng sản lượng (tấn)], vw_OutputMonthly[PeriodStart] = LastMonth )
+		formatString: #,##0.0
+		displayFolder: 1. Sản xuất
+		lineageTag: 93f28f32-01b9-52e0-a275-c5c47557b118
+
+	/// Giá trị tồn kho theo giá vốn bình quân (đồng)
+	measure 'Giá trị tồn kho' = SUM ( vw_InventoryOnHand[StockValue] )
+		formatString: #,##0
+		displayFolder: 2. Kho & NVL
+		lineageTag: 9d01093d-3dcb-56cc-9d3f-f3c94536bc15
+
+	/// Giá trị tồn kho quy đổi tỷ đồng
+	measure 'Giá trị tồn kho (tỷ đồng)' = DIVIDE ( [Giá trị tồn kho], 1000000000 )
+		formatString: #,##0.00
+		displayFolder: 2. Kho & NVL
+		lineageTag: f08658ad-4525-510d-be24-88292f20f263
+
+	/// Số lượng tồn kho hiện tại (kg hoặc đơn vị)
+	measure 'Tồn kho (kg)' = SUM ( vw_InventoryOnHand[OnHandQuantity] )
+		formatString: #,##0
+		displayFolder: 2. Kho & NVL
+		lineageTag: a8bff1e6-fb01-50d8-94d2-60ae49830f2b
+
+	/// Số mã hàng có tồn kho thấp hơn định mức tối thiểu
+	measure 'Số mặt hàng dưới định mức' = CALCULATE ( DISTINCTCOUNT ( vw_InventoryOnHand[ItemCode] ), vw_InventoryOnHand[IsBelowMinStock] = 1 )
+		formatString: #,##0
+		displayFolder: 2. Kho & NVL
+		lineageTag: 0767ba50-598b-5743-b602-aec23e197c3c
+
+	/// Tồn kho cuối kỳ gần nhất (kg)
+	measure 'Tồn cuối kỳ' = VAR LastPeriod = MAX ( vw_StockMovement[PeriodStart] ) RETURN CALCULATE ( SUM ( vw_StockMovement[ClosingQuantity] ), vw_StockMovement[PeriodStart] = LastPeriod )
+		formatString: #,##0
+		displayFolder: 2. Kho & NVL
+		lineageTag: d7bb3404-39f2-5e65-a525-ac55f0a9581a
+
+	/// Tồn kho cuối kỳ theo từng tháng
+	measure 'Tồn cuối kỳ theo tháng' = SUM ( vw_StockMovement[ClosingQuantity] )
+		formatString: #,##0
+		displayFolder: 2. Kho & NVL
+		lineageTag: 8bf50a8b-d4f8-51b2-b30c-6e633b49aab8
+
+	/// Tổng nhập kho trong kỳ
+	measure 'Nhập kho (kg)' = SUM ( vw_StockMovement[ReceiptQuantity] )
+		formatString: #,##0
+		displayFolder: 2. Kho & NVL
+		lineageTag: 80b96ad2-d0c2-5af3-b91f-6915d1b2096f
+
+	/// Tổng xuất kho trong kỳ
+	measure 'Xuất kho (kg)' = SUM ( vw_StockMovement[IssueQuantity] )
+		formatString: #,##0
+		displayFolder: 2. Kho & NVL
+		lineageTag: a1bf2383-0320-534e-805b-eefc1e88abca
+
+	/// Chi phí nguyên vật liệu theo định mức (đồng)
+	measure 'Chi phí NVL định mức' = SUM ( vw_MaterialCostVariance[StandardMaterialCost] )
+		formatString: #,##0
+		displayFolder: 3. Chi phí
+		lineageTag: 5c636245-afe2-542e-8b87-8f05cac280d6
+
+	/// Chi phí nguyên vật liệu thực tế (đồng)
+	measure 'Chi phí NVL thực tế' = SUM ( vw_MaterialCostVariance[ActualMaterialCost] )
+		formatString: #,##0
+		displayFolder: 3. Chi phí
+		lineageTag: c2c39224-38d1-5cb0-ab04-8f95435ffdab
+
+	/// Chênh lệch chi phí NVL thực tế so với định mức (đồng)
+	measure 'Chênh lệch chi phí NVL' = [Chi phí NVL thực tế] - [Chi phí NVL định mức]
+		formatString: #,##0
+		displayFolder: 3. Chi phí
+		lineageTag: d8553be9-faec-55c6-bd4f-9c14bec50da9
+
+	/// Tỷ lệ chênh lệch chi phí NVL
+	measure 'Tỷ lệ chênh lệch chi phí %' = DIVIDE ( [Chênh lệch chi phí NVL], [Chi phí NVL định mức] )
+		formatString: 0.00%
+		displayFolder: 3. Chi phí
+		lineageTag: 4d6a55db-515f-5cef-9d0d-4397c3d00068
+
+	/// Chi phí NVL định mức quy đổi triệu đồng
+	measure 'Chi phí NVL định mức (triệu đồng)' = DIVIDE ( [Chi phí NVL định mức], 1000000 )
+		formatString: #,##0.0
+		displayFolder: 3. Chi phí
+		lineageTag: 0fc51c1e-f818-5588-9e4e-f94bfd2ee58f
+
+	/// Chi phí NVL thực tế quy đổi triệu đồng
+	measure 'Chi phí NVL thực tế (triệu đồng)' = DIVIDE ( [Chi phí NVL thực tế], 1000000 )
+		formatString: #,##0.0
+		displayFolder: 3. Chi phí
+		lineageTag: 675b4c7f-0fce-5234-9f7e-faa9def35903
+
+	/// Chênh lệch chi phí NVL quy đổi triệu đồng
+	measure 'Chênh lệch chi phí (triệu đồng)' = DIVIDE ( [Chênh lệch chi phí NVL], 1000000 )
+		formatString: #,##0.0
+		displayFolder: 3. Chi phí
+		lineageTag: 50eb36cd-c67e-51ad-a752-4b2ee149ff5e
+
+	/// Số lệnh sản xuất có chi phí NVL vượt định mức
+	measure 'Số lệnh vượt định mức' = CALCULATE ( COUNTROWS ( vw_MaterialCostVariance ), vw_MaterialCostVariance[VarianceStatus] = "Vượt định mức" )
+		formatString: #,##0
+		displayFolder: 3. Chi phí
+		lineageTag: cccf1669-d79d-5396-a1a5-0ed956386307
+
+	column Placeholder
+		isHidden
+		lineageTag: c7307b06-2cc7-5956-8086-90441e922b24
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Placeholder]
+
+	partition _Measures = calculated
+		mode: import
+		source = ROW ("Placeholder", 1)
+

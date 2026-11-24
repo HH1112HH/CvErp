@@ -1,0 +1,141 @@
+@model StockSummaryReportViewModel
+@{
+    ViewData["Title"] = "Tổng hợp tồn kho";
+    ViewData["Subtitle"] = "Tồn kho theo vật tư, kho và nhóm, tính đến thời điểm hiện tại.";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Tổng hợp tồn kho</h2>
+        <p class="page-subtitle">@Model.ItemCount mã vật tư · @Model.LowStockCount mã dưới định mức</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-light" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Báo cáo</a>
+        <a class="btn btn-outline-primary" asp-action="ExportStockSummary"
+           asp-route-warehouseId="@Model.WarehouseId" asp-route-category="@Model.Category">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất CSV
+        </a>
+        <button class="btn btn-outline-primary" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i>In</button>
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-4">
+            <label class="form-label" for="warehouseId">Kho</label>
+            <select id="warehouseId" name="warehouseId" class="form-select">
+                <option value="">Tất cả kho</option>
+                @foreach (var option in Model.WarehouseOptions)
+                {
+                    <option value="@option.Value" selected="@(option.Value == Model.WarehouseId?.ToString() ? "selected" : null)">@option.Text</option>
+                }
+            </select>
+        </div>
+        <div class="span-4">
+            <label class="form-label" for="category">Nhóm vật tư</label>
+            <select id="category" name="category" class="form-select">
+                <option value="">Tất cả nhóm</option>
+                @foreach (var category in Model.Categories)
+                {
+                    <option value="@category" selected="@(Model.Category == category ? "selected" : null)">@category</option>
+                }
+            </select>
+        </div>
+        <div class="span-4 d-flex align-items-end gap-2">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Áp dụng</button>
+            <a class="btn btn-light" asp-action="StockSummary">Xóa lọc</a>
+        </div>
+    </div>
+</form>
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-blue"><i class="bi bi-safe2"></i></div>
+        <div>
+            <div class="kpi-label">Tổng giá trị tồn</div>
+            <div class="kpi-value">@UiText.Money(Model.TotalValue)<small> đ</small></div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-teal"><i class="bi bi-boxes"></i></div>
+        <div>
+            <div class="kpi-label">Số lượng tồn</div>
+            <div class="kpi-value">@UiText.Qty(Model.TotalQuantity)<small> đơn vị</small></div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-violet"><i class="bi bi-upc-scan"></i></div>
+        <div>
+            <div class="kpi-label">Số mã vật tư</div>
+            <div class="kpi-value">@Model.ItemCount<small> mã</small></div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-amber"><i class="bi bi-exclamation-triangle"></i></div>
+        <div>
+            <div class="kpi-label">Mã dưới định mức</div>
+            <div class="kpi-value">@Model.LowStockCount<small> mã</small></div>
+        </div>
+    </div>
+</div>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Mã vật tư</th>
+                    <th>Tên vật tư</th>
+                    <th>ĐVT</th>
+                    <th>Nhóm</th>
+                    <th>Loại</th>
+                    <th class="text-end">SL theo kho</th>
+                    <th class="text-end">Tổng tồn</th>
+                    <th class="text-end">Đơn giá</th>
+                    <th class="text-end">Giá trị</th>
+                    <th class="text-end">Tồn tối thiểu</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr><td colspan="11"><div class="empty-state"><i class="bi bi-inbox"></i><strong>Không có dữ liệu tồn kho</strong><p>Thử đổi bộ lọc.</p></div></td></tr>
+                }
+                @foreach (var row in Model.Rows.OrderBy(x => x.Code))
+                {
+                    <tr>
+                        <td class="strong-code">@row.Code</td>
+                        <td class="fw-semibold">@row.Name</td>
+                        <td>@row.Unit</td>
+                        <td class="text-muted-sm">@row.Category</td>
+                        <td class="text-muted-sm">@UiText.ItemTypeLabel(row.ItemType)</td>
+                        <td class="num">@UiText.Qty(row.QuantityByWarehouse)</td>
+                        <td class="num">@UiText.Qty(row.TotalQuantity)</td>
+                        <td class="num">@UiText.Money(row.UnitCost)</td>
+                        <td class="num fw-semibold">@UiText.Money(row.Value)</td>
+                        <td class="num text-muted-sm">@UiText.Qty(row.MinStock)</td>
+                        <td>
+                            @if (row.IsLowStock)
+                            {
+                                <span class="badge text-bg-warning">Dưới định mức</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-success">Đủ tồn</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="6" class="text-end fw-semibold">Tổng cộng</td>
+                    <td class="num fw-semibold">@UiText.Qty(Model.TotalQuantity)</td>
+                    <td></td>
+                    <td class="num fw-bold text-brand">@UiText.Money(Model.TotalValue) đ</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>

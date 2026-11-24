@@ -1,0 +1,32 @@
+relationship db656fd8-6f0c-568d-b7fe-2c787ff90926
+	fromColumn: vw_InventoryOnHand.ItemId
+	toColumn: DimProduct.ItemId
+
+relationship 3b8f6568-d3c5-5769-8d72-5dd8e31b6508
+	fromColumn: vw_ProductionPerformance.ProductItemId
+	toColumn: DimProduct.ItemId
+
+relationship 93bc916e-8298-53e6-926e-6a75b20c1844
+	fromColumn: vw_OutputMonthly.ItemId
+	toColumn: DimProduct.ItemId
+
+relationship be899d8d-e59b-568d-ae2d-a2197e34b3ab
+	fromColumn: vw_StockMovement.ItemId
+	toColumn: DimProduct.ItemId
+
+relationship 3eb0a776-d980-5b47-ae31-1a6a9993bb24
+	fromColumn: vw_InventoryOnHand.WarehouseId
+	toColumn: DimWarehouse.WarehouseId
+
+relationship c0f9430e-9617-5f48-904a-5269740c593d
+	fromColumn: vw_StockMovement.WarehouseId
+	toColumn: DimWarehouse.WarehouseId
+
+relationship 5b136651-3158-5023-b82f-3c7a232fa779
+	fromColumn: vw_MaterialCostVariance.ProductCode
+	toColumn: DimProduct.ItemCode
+
+relationship 72d559e1-0465-50d9-a808-d0bb2d21c5bc
+	fromColumn: vw_ProductionOrderProgress.ProductCode
+	toColumn: DimProduct.ItemCode
+

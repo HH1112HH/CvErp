@@ -1,0 +1,30 @@
+@model ProductionOrderCreateViewModel
+@{
+    ViewData["Title"] = "Tạo lệnh sản xuất";
+    ViewData["Subtitle"] = "Chọn thành phẩm, số lượng và kho nhập; nhu cầu vật tư được chụp từ BOM hiện tại.";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Tạo lệnh sản xuất</h2>
+        <p class="page-subtitle">Lệnh được lưu ở trạng thái Nháp và chưa cấp phát vật tư.</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-light" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Danh sách</a>
+    </div>
+</div>
+
+<form method="post" asp-action="Create" autocomplete="off" data-line-form>
+    <div asp-validation-summary="All" class="alert alert-danger py-2 small validation-summary" role="alert"></div>
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-clipboard-plus"></i>Thông tin lệnh sản xuất</div>
+        <partial name="_Form" model="Model" />
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Lưu lệnh sản xuất</button>
+        <a class="btn btn-light" asp-action="Index">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

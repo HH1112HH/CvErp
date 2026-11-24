@@ -1,0 +1,32 @@
+table DimWarehouse
+	lineageTag: 632ac75b-c66f-5f3b-8ee9-a2ca7fd4118a
+
+	column WarehouseId
+		dataType: int64
+		isHidden
+		lineageTag: 2e77f2c0-b0b3-5e4b-93ee-043738f7cbd4
+		summarizeBy: none
+		sourceColumn: WarehouseId
+
+	column WarehouseCode
+		dataType: string
+		lineageTag: fbe28b67-17b2-5fda-a6f7-f52c35598883
+		summarizeBy: none
+		sourceColumn: WarehouseCode
+
+	column WarehouseName
+		dataType: string
+		lineageTag: b1121196-b0f9-533e-9e1e-9a2e59b420f2
+		summarizeBy: none
+		sourceColumn: WarehouseName
+
+	partition DimWarehouse = m
+		mode: import
+		source =
+				let
+					Source = Sql.Database("localhost\SQLEXPRESS", "CvErp"),
+					Data = Source{[Schema="dbo",Item="vw_InventoryOnHand"]}[Data],
+					Dim = Table.Distinct(Table.SelectColumns(Data, { "WarehouseId", "WarehouseCode", "WarehouseName" }))
+				in
+					Dim
+

@@ -1,0 +1,139 @@
+@model MovementReportViewModel
+@{
+    ViewData["Title"] = "Biến động kho";
+    ViewData["Subtitle"] = "Lịch sử nhập xuất kho theo chứng từ đã ghi sổ.";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Biến động kho</h2>
+        <p class="page-subtitle">Kỳ @UiText.Date(Model.From) – @UiText.Date(Model.To) · @Model.Transactions.TotalCount giao dịch</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-light" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Báo cáo</a>
+        <a class="btn btn-outline-primary"
+           asp-action="ExportMovements"
+           asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"
+           asp-route-warehouseId="@Model.WarehouseId" asp-route-itemId="@Model.ItemId" asp-route-type="@Model.Type">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất CSV
+        </a>
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-2">
+            <label class="form-label" for="from">Từ ngày</label>
+            <input id="from" type="date" name="from" value="@Model.From.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="to">Đến ngày</label>
+            <input id="to" type="date" name="to" value="@Model.To.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="span-3">
+            <label class="form-label" for="warehouseId">Kho</label>
+            <select id="warehouseId" name="warehouseId" class="form-select">
+                <option value="">Tất cả kho</option>
+                @foreach (var option in Model.WarehouseOptions)
+                {
+                    <option value="@option.Value" selected="@(option.Value == Model.WarehouseId?.ToString() ? "selected" : null)">@option.Text</option>
+                }
+            </select>
+        </div>
+        <div class="span-3">
+            <label class="form-label" for="itemId">Vật tư</label>
+            <select id="itemId" name="itemId" class="form-select">
+                <option value="">Tất cả vật tư</option>
+                @foreach (var option in Model.ItemOptions)
+                {
+                    <option value="@option.Value" selected="@(option.Value == Model.ItemId?.ToString() ? "selected" : null)">@option.Text</option>
+                }
+            </select>
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="type">Loại giao dịch</label>
+            <select id="type" name="type" class="form-select">
+                <option value="">Tất cả</option>
+                @foreach (var type in Enum.GetValues<InventoryTransactionType>())
+                {
+                    <option value="@type" selected="@(Model.Type == type ? "selected" : null)">@UiText.TxTypeLabel(type)</option>
+                }
+            </select>
+        </div>
+        <div class="span-12 d-flex gap-2 flex-wrap">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Áp dụng</button>
+            <a class="btn btn-light" asp-action="Movements">Xóa lọc</a>
+        </div>
+    </div>
+</form>
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-teal"><i class="bi bi-box-arrow-in-down"></i></div>
+        <div>
+            <div class="kpi-label">Nhập trong kỳ</div>
+            <div class="kpi-value">@UiText.Qty(Model.TotalInQuantity)</div>
+            <div class="kpi-note">@UiText.Money(Model.TotalInValue) đ</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-amber"><i class="bi bi-box-arrow-up"></i></div>
+        <div>
+            <div class="kpi-label">Xuất trong kỳ</div>
+            <div class="kpi-value">@UiText.Qty(Math.Abs(Model.TotalOutQuantity))</div>
+            <div class="kpi-note">@UiText.Money(Math.Abs(Model.TotalOutValue)) đ</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon bg-soft-blue"><i class="bi bi-arrow-left-right"></i></div>
+        <div>
+            <div class="kpi-label">Chênh lệch giá trị</div>
+            <div class="kpi-value">@UiText.Money(Model.TotalInValue + Model.TotalOutValue)<small> đ</small></div>
+            <div class="kpi-note">Nhập trừ xuất trong kỳ</div>
+        </div>
+    </div>
+</div>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Ngày</th>
+                    <th>Số chứng từ</th>
+                    <th>Loại giao dịch</th>
+                    <th>Mã vật tư</th>
+                    <th>Tên vật tư</th>
+                    <th>Kho</th>
+                    <th class="text-end">Số lượng</th>
+                    <th class="text-end">Đơn giá</th>
+                    <th class="text-end">Giá trị</th>
+                    <th>Ghi chú</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Transactions.Items.Count == 0)
+                {
+                    <tr><td colspan="10"><div class="empty-state"><i class="bi bi-inbox"></i><strong>Không có giao dịch</strong><p>Thử mở rộng khoảng thời gian hoặc bỏ bộ lọc.</p></div></td></tr>
+                }
+                @foreach (var transaction in Model.Transactions.Items)
+                {
+                    <tr>
+                        <td class="nowrap">@UiText.Date(transaction.TransactionDate)</td>
+                        <td class="strong-code">@transaction.ReferenceNo</td>
+                        <td>@UiText.TxTypeLabel(transaction.Type)</td>
+                        <td class="strong-code">@transaction.Item?.Code</td>
+                        <td>@transaction.Item?.Name</td>
+                        <td class="text-muted-sm">@transaction.Warehouse?.Name</td>
+                        <td class="num @(transaction.Quantity < 0 ? "stock-zero" : "stock-positive")">
+                            @(transaction.Quantity > 0 ? "+" : "")@UiText.Qty(transaction.Quantity)
+                        </td>
+                        <td class="num">@UiText.Money(transaction.UnitCost)</td>
+                        <td class="num">@UiText.Money(transaction.Amount)</td>
+                        <td class="text-muted-sm text-truncate" style="max-width:190px;">@transaction.Note</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="Model.Transactions" />
+</div>

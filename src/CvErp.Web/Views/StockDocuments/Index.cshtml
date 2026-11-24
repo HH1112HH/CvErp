@@ -1,0 +1,165 @@
+@model StockDocumentListViewModel
+@{
+    ViewData["Title"] = "Chứng từ kho";
+    ViewData["Subtitle"] = "Phiếu nhập, xuất và điều chuyển kho theo luồng Nháp → Chờ duyệt → Đã duyệt → Ghi sổ.";
+    var canCreate = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Warehouse) || User.IsInRole(AppRoles.Purchasing);
+    var today = DateOnly.FromDateTime(DateTime.Today);
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Chứng từ kho</h2>
+        <p class="page-subtitle">@Model.Documents.TotalCount chứng từ · ghi sổ một lần, chống ghi trùng</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-outline-primary" asp-action="Export"
+           asp-route-type="@Model.Type" asp-route-status="@Model.Status" asp-route-search="@Model.Search"
+           asp-route-warehouseId="@Model.WarehouseId"
+           asp-route-from="@Model.From?.ToString("yyyy-MM-dd")" asp-route-to="@Model.To?.ToString("yyyy-MM-dd")">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất CSV
+        </a>
+        @if (canCreate)
+        {
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-plus-lg me-1"></i>Lập chứng từ
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" asp-action="Create" asp-route-type="@StockDocumentType.Receipt"><i class="bi bi-box-arrow-in-down me-2 text-brand"></i>Phiếu nhập kho</a></li>
+                    <li><a class="dropdown-item" asp-action="Create" asp-route-type="@StockDocumentType.Issue"><i class="bi bi-box-arrow-up me-2 text-brand"></i>Phiếu xuất kho</a></li>
+                    <li><a class="dropdown-item" asp-action="Create" asp-route-type="@StockDocumentType.Transfer"><i class="bi bi-arrow-left-right me-2 text-brand"></i>Phiếu điều chuyển</a></li>
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="filter-grid">
+        <div class="span-3">
+            <label class="form-label" for="search">Tìm kiếm</label>
+            <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="Số chứng từ, ghi chú..." />
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="type">Loại</label>
+            <select id="type" name="type" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="Receipt" selected="@(Model.Type == StockDocumentType.Receipt ? "selected" : null)">Nhập kho</option>
+                <option value="Issue" selected="@(Model.Type == StockDocumentType.Issue ? "selected" : null)">Xuất kho</option>
+                <option value="Transfer" selected="@(Model.Type == StockDocumentType.Transfer ? "selected" : null)">Điều chuyển</option>
+            </select>
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="status">Trạng thái</label>
+            <select id="status" name="status" class="form-select">
+                <option value="">Tất cả</option>
+                @foreach (var status in Enum.GetValues<DocumentStatus>())
+                {
+                    <option value="@status" selected="@(Model.Status == status ? "selected" : null)">@UiText.StatusLabel(status)</option>
+                }
+            </select>
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="warehouseId">Kho</label>
+            <select id="warehouseId" name="warehouseId" class="form-select">
+                <option value="">Tất cả kho</option>
+                @foreach (var option in Model.WarehouseOptions)
+                {
+                    <option value="@option.Value" selected="@(option.Value == Model.WarehouseId?.ToString() ? "selected" : null)">@option.Text</option>
+                }
+            </select>
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="from">Từ ngày</label>
+            <input id="from" type="date" name="from" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="span-2">
+            <label class="form-label" for="to">Đến ngày</label>
+            <input id="to" type="date" name="to" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="span-3 d-flex align-items-end gap-2">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Lọc</button>
+            <a class="btn btn-light" asp-action="Index">Xóa lọc</a>
+            <a class="btn btn-light" asp-action="Index" asp-route-from="@today.AddMonths(-1).ToString("yyyy-MM-dd")" asp-route-to="@today.ToString("yyyy-MM-dd")">30 ngày</a>
+        </div>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Số chứng từ</th>
+                    <th>Loại</th>
+                    <th>Ngày</th>
+                    <th>Kho xuất / nhập</th>
+                    <th>Đối tượng</th>
+                    <th class="text-end">Giá trị</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Documents.Items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <i class="bi bi-receipt"></i>
+                                <strong>Không tìm thấy chứng từ</strong>
+                                <p>Thử thay đổi bộ lọc hoặc lập chứng từ mới.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @foreach (var document in Model.Documents.Items)
+                {
+                    <tr>
+                        <td>
+                            <a class="strong-code" asp-action="Details" asp-route-id="@document.Id">@document.DocumentNo</a>
+                            @if (!string.IsNullOrWhiteSpace(document.Note))
+                            {
+                                <div class="text-muted-sm text-truncate" style="max-width:240px;">@document.Note</div>
+                            }
+                        </td>
+                        <td><span class="badge @UiText.DocTypeCss(document.Type)">@UiText.DocTypeLabel(document.Type)</span></td>
+                        <td class="nowrap">@UiText.Date(document.DocumentDate)</td>
+                        <td>
+                            <div>@document.Warehouse?.Name</div>
+                            @if (document.DestinationWarehouse is not null)
+                            {
+                                <div class="text-muted-sm"><i class="bi bi-arrow-right me-1"></i>@document.DestinationWarehouse.Name</div>
+                            }
+                        </td>
+                        <td class="text-muted-sm">
+                            @if (document.Supplier is not null)
+                            {
+                                <i class="bi bi-truck me-1"></i>@document.Supplier.Name
+                            }
+                            else if (document.DestinationWarehouse is not null)
+                            {
+                                <span>Điều chuyển nội bộ</span>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                        <td class="num fw-semibold">@UiText.Money(document.TotalAmount)</td>
+                        <td>@Html.Raw(UiText.Badge(UiText.StatusLabel(document.Status), UiText.StatusCss(document.Status)))</td>
+                        <td>
+                            <div class="table-actions">
+                                <a class="icon-link" title="Chi tiết" asp-action="Details" asp-route-id="@document.Id"><i class="bi bi-eye"></i></a>
+                                @if (document.Status == DocumentStatus.Draft && canCreate)
+                                {
+                                    <a class="icon-link" title="Sửa" asp-action="Edit" asp-route-id="@document.Id"><i class="bi bi-pencil"></i></a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="Model.Documents" />
+</div>

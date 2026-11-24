@@ -1,0 +1,119 @@
+table vw_MaterialCostVariance
+	lineageTag: 05c26d21-1c76-5bea-8909-d6d93a88315e
+
+	column ProductionOrderId
+		dataType: int64
+		isHidden
+		lineageTag: 10ece09e-0ffc-5b6c-a010-7111974fae0f
+		summarizeBy: none
+		sourceColumn: ProductionOrderId
+
+	column OrderNo
+		dataType: string
+		lineageTag: 99ba1e82-06ed-559f-bd75-8a2222b28e96
+		summarizeBy: none
+		sourceColumn: OrderNo
+
+	column ProductCode
+		dataType: string
+		lineageTag: 79447504-778b-5ab7-b2de-510bfdcaadab
+		summarizeBy: none
+		sourceColumn: ProductCode
+
+	column ProductName
+		dataType: string
+		lineageTag: 9d78e24c-4146-5d71-baea-19a48378ef4d
+		summarizeBy: none
+		sourceColumn: ProductName
+
+	column PlannedQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: b5623fd0-782d-564b-a385-79407da7f137
+		summarizeBy: sum
+		sourceColumn: PlannedQuantity
+
+	column ActualQuantity
+		dataType: double
+		formatString: #,##0
+		lineageTag: 2a9a61aa-1823-5a9b-ba7d-7e40c39e0aa0
+		summarizeBy: sum
+		sourceColumn: ActualQuantity
+
+	column StandardMaterialCost
+		dataType: double
+		formatString: #,##0
+		lineageTag: 68747f52-154a-5126-addf-f899e60bf1a2
+		summarizeBy: none
+		sourceColumn: StandardMaterialCost
+
+	column ActualMaterialCost
+		dataType: double
+		formatString: #,##0
+		lineageTag: c2f0e67d-9e42-549f-b065-736d3c3a6cea
+		summarizeBy: none
+		sourceColumn: ActualMaterialCost
+
+	column VarianceAmount
+		dataType: double
+		formatString: #,##0
+		lineageTag: 607eb33f-ff21-5809-9a36-dda2116293f0
+		summarizeBy: sum
+		sourceColumn: VarianceAmount
+
+	column VariancePct
+		dataType: double
+		formatString: 0.00
+		lineageTag: efd1f03d-8375-5290-87a7-a65ef6bb0e06
+		summarizeBy: none
+		sourceColumn: VariancePct
+
+	column VarianceStatus
+		dataType: string
+		lineageTag: d49a4729-91c8-57cd-8369-53dd1f67b5c1
+		summarizeBy: none
+		sourceColumn: VarianceStatus
+
+	column ActualMaterialCostPerUnit
+		dataType: double
+		formatString: #,##0
+		lineageTag: 7aaa8a73-2afe-5548-9440-6740d0b27983
+		summarizeBy: none
+		sourceColumn: ActualMaterialCostPerUnit
+
+	column StartDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: cabd3fdc-f19a-5ff3-9ce2-d6b30fd271f6
+		summarizeBy: none
+		sourceColumn: StartDate
+
+	column DueDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 84eb5b6d-8b99-5ce5-a49c-85fa62487da0
+		summarizeBy: none
+		sourceColumn: DueDate
+
+	column DueMonth
+		dataType: string
+		lineageTag: fc1babe3-55a0-5292-8ea9-5c19b58d4acb
+		summarizeBy: none
+		sourceColumn: DueMonth
+
+	column CompletedAt
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 95dfa734-64fe-5bfb-a36c-304910dc47ee
+		summarizeBy: none
+		sourceColumn: CompletedAt
+
+	partition vw_MaterialCostVariance = m
+		mode: import
+		source =
+				let
+					Source = Sql.Database("localhost\SQLEXPRESS", "CvErp"),
+					Data = Source{[Schema="dbo",Item="vw_MaterialCostVariance"]}[Data]
+				in
+					Data
+

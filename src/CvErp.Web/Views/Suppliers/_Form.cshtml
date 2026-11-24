@@ -1,0 +1,36 @@
+@model SupplierEditViewModel
+<div class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="Code" class="form-label required"></label>
+        <input asp-for="Code" class="form-control text-uppercase" placeholder="VD: NCC-GO" />
+        <span asp-validation-for="Code" class="text-danger small"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="Name" class="form-label required"></label>
+        <input asp-for="Name" class="form-control" placeholder="Tên công ty / nhà cung cấp" />
+        <span asp-validation-for="Name" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="TaxCode" class="form-label"></label>
+        <input asp-for="TaxCode" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Phone" class="form-label"></label>
+        <input asp-for="Phone" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" />
+        <span asp-validation-for="Email" class="text-danger small"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Address" class="form-label"></label>
+        <input asp-for="Address" class="form-control" />
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <div class="form-check form-switch mb-2">
+            <input asp-for="IsActive" class="form-check-input" role="switch" />
+            <label asp-for="IsActive" class="form-check-label"></label>
+        </div>
+    </div>
+</div>

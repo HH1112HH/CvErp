@@ -1,0 +1,85 @@
+@model CompleteProductionOrderViewModel
+@{
+    ViewData["Title"] = "Ghi nhận hoàn thành";
+    ViewData["Subtitle"] = $"Lệnh {Model.OrderNo} · {Model.ProductName}";
+}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Ghi nhận hoàn thành lệnh</h2>
+        <p class="page-subtitle">Sản lượng tốt sẽ được nhập kho thành phẩm; sản lượng lỗi chỉ ghi nhận, không nhập kho.</p>
+    </div>
+    <div class="toolbar">
+        <a class="btn btn-light" asp-action="Details" asp-route-id="@Model.ProductionOrderId"><i class="bi bi-arrow-left me-1"></i>Chi tiết lệnh</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-7">
+        <form method="post" asp-action="Complete" asp-route-id="@Model.ProductionOrderId" autocomplete="off">
+            <input type="hidden" asp-for="ProductionOrderId" />
+            <input type="hidden" asp-for="OrderNo" />
+            <input type="hidden" asp-for="ProductName" />
+            <input type="hidden" asp-for="PlannedQuantity" />
+            <div asp-validation-summary="All" class="alert alert-danger py-2 small validation-summary" role="alert"></div>
+            <div class="form-section">
+                <div class="form-section-title"><i class="bi bi-check2-square"></i>Sản lượng hoàn thành</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="GoodQuantity" class="form-label required"></label>
+                        <input asp-for="GoodQuantity" type="number" step="0.0001" min="0" class="form-control" />
+                        <span asp-validation-for="GoodQuantity" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="DefectQuantity" class="form-label"></label>
+                        <input asp-for="DefectQuantity" type="number" step="0.0001" min="0" class="form-control" />
+                        <span asp-validation-for="DefectQuantity" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Note" class="form-label"></label>
+                        <textarea asp-for="Note" class="form-control" rows="3" placeholder="Ghi chú sản lượng, lý do lỗi..."></textarea>
+                        <span asp-validation-for="Note" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" data-confirm="Xác nhận hoàn thành lệnh @Model.OrderNo và nhập thành phẩm vào kho?">
+                    <i class="bi bi-check2-circle me-1"></i>Hoàn thành &amp; nhập kho
+                </button>
+                <a class="btn btn-light" asp-action="Details" asp-route-id="@Model.ProductionOrderId">Hủy</a>
+            </div>
+        </form>
+    </div>
+    <div class="col-xl-5">
+        <div class="card mb-3">
+            <div class="card-header">Thông tin lệnh</div>
+            <div class="card-body">
+                <div class="detail-item mb-3">
+                    <label>Số lệnh</label>
+                    <div class="strong-code">@Model.OrderNo</div>
+                </div>
+                <div class="detail-item mb-3">
+                    <label>Thành phẩm</label>
+                    <div>@Model.ProductName</div>
+                </div>
+                <div class="detail-item">
+                    <label>Số lượng kế hoạch</label>
+                    <div class="big">@UiText.Qty(Model.PlannedQuantity)</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="form-section-title mb-2"><i class="bi bi-exclamation-triangle"></i>Lưu ý</div>
+                <ul class="text-muted-sm mb-0 ps-3">
+                    <li>Chỉ ghi nhận hoàn thành một lần cho mỗi lệnh.</li>
+                    <li>Sản lượng tốt được tạo giao dịch nhập kho thành phẩm với đơn giá thành phẩm từ chi phí vật tư thực tế.</li>
+                    <li>Chi phí thực tế lấy từ các phiếu cấp phát đã ghi sổ.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "CvErp_Dashboard"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "20aaa3c4-7ad9-406d-80ca-1f501ed981a2"
+  }
+}
